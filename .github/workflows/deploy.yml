@@ -32,6 +32,8 @@ jobs:
         run: godot --headless --path . --editor --import --quit
       - name: Verify neutral side-idle textures contain visible sprites
         run: godot --headless --path . --script res://tests/check_side_idle.gd
+      - name: Verify tree art and blocked forest anchors
+        run: godot --headless --path . --script res://tests/check_tree_art.gd
       - name: Export development web build
         run: |
           mkdir -p "$RUNNER_TEMP/wildbound-dev-check"
