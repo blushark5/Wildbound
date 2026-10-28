@@ -71,6 +71,12 @@ func _dismiss_world_notice() -> void:
     _render_world()
 
 func _unhandled_input(event: InputEvent) -> void:
+    if mode == "dialogue":
+        if event is InputEventMouseButton and event.pressed:
+            _render_world()
+        elif event is InputEventScreenTouch and event.pressed:
+            _render_world()
+        return
     if mode != "world" or return_message.is_empty():
         return
     if event is InputEventMouseButton:
@@ -174,8 +180,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
             _render_pause()
         elif key_event.keycode == KEY_TAB:
             _render_team()
-    elif mode == "team" or mode == "dialogue":
+    elif mode == "team":
         if key_event.keycode == KEY_ESCAPE:
+            _render_world()
+    elif mode == "dialogue":
+        if key_event.keycode in [KEY_ESCAPE, KEY_ENTER, KEY_SPACE, KEY_E]:
             _render_world()
     elif mode == "pause":
         if key_event.keycode == KEY_ESCAPE:
@@ -244,11 +253,11 @@ func _talk() -> void:
             party[index] = creature
         mode = "dialogue"
         _clear_ui()
-        _full_screen_tint(Color("#152d3f"), 0.82)
-        _box(hud, Vector2(32, 58), Vector2(416, 218), PALE)
-        _label(hud, "KEEPER VALE", 54, 70, 355, 32, 21, NAVY)
-        _label(hud, "Beyond the eastern gate is Fernpath Meadow.\nWild creatures hide in the tall grass.\nWeaken one before using a Capture Seal!\nI've restored your team's health.", 54, 112, 367, 108, 13, NAVY)
-        _button(hud, "Continue", 166, 235, 148, 32, Callable(self, "_render_world"))
+        # Dialogue occupies the bottom of the world rather than covering it.
+        _box(hud, Vector2(12, 199), Vector2(456, 115), PALE)
+        _label(hud, "KEEPER VALE", 23, 204, 300, 26, 17, NAVY)
+        _label(hud, "Fernpath Meadow lies beyond the eastern gate.\nWild creatures hide in tall grass.\nWeaken one before using a Capture Seal!\nYour team has been healed.", 23, 235, 315, 70, 12, NAVY)
+        _button(hud, "Continue", 346, 277, 109, 31, Callable(self, "_render_world"))
         _save()
     else:
         return_message = "Explore east, or talk to Keeper Vale near the plaza."
