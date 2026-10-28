@@ -47,6 +47,7 @@ var battle_page_index: int = 0
 var evolution_notice: Dictionary = {}
 var audio_engine: Node
 var character_art: RefCounted
+var walk_pose: int = 0
 
 func _ready() -> void:
     rng.randomize()
@@ -106,8 +107,8 @@ func _load_map() -> void:
     for coordinate in meta.get("tall_grass", []):
         tall[Vector2i(int(coordinate[0]), int(coordinate[1]))] = true
 
-func _hero_texture(facing: String) -> Texture2D:
-    var loaded: Variant = character_art.call("sprite", facing)
+func _hero_texture(facing: String, pose: int = 0) -> Texture2D:
+    var loaded: Variant = character_art.call("sprite", facing, pose)
     return loaded as Texture2D
 
 func _create_world() -> void:
@@ -151,6 +152,7 @@ func _create_world() -> void:
     overlay.add_child(hud)
 
 func _place_hero() -> void:
+    walk_pose = 0
     player_sprite.position = Vector2(player_tile.x * 16 - 4, player_tile.y * 16 - 16)
     player_sprite.texture = _hero_texture(direction)
 
@@ -223,6 +225,9 @@ func _step(shift: Vector2i) -> void:
     if not return_message.is_empty():
         return_message = ""
         _render_world()
+    # Animate only valid walking steps; each successive tile alternates footfall.
+    walk_pose = 1 if walk_pose == 2 or walk_pose == 0 else 2
+    player_sprite.texture = _hero_texture(direction, walk_pose)
     player_tile = next_tile
     is_moving = true
     # Do not teleport the camera while the sprite is moving. Advance both in one tween.
@@ -246,6 +251,7 @@ func _update_movement(progress: float, starting_hero: Vector2, target_hero: Vect
 
 func _complete_step(next_tile: Vector2i) -> void:
     player_sprite.position = Vector2(player_tile.x * 16 - 4, player_tile.y * 16 - 16)
+    player_sprite.texture = _hero_texture(direction)
     follow_camera.position = Vector2(player_tile.x * 16 + 8, player_tile.y * 16 + 8)
     is_moving = false
     step_timer = 0.0
