@@ -33,12 +33,15 @@ func sprite(facing: String, pose: int = 0) -> Texture2D:
     if pose == 0 and (facing == "left" or facing == "right"):
         if side_idle_sheet == null:
             side_idle_sheet = load("res://assets/hero_idle_sides.png") as Texture2D
-        if side_idle_sheet == null:
-            push_error("Missing neutral side idle sprites")
-            return null
-        atlas.atlas = side_idle_sheet
-        var idle_column: int = 0 if facing == "left" else 1
-        atlas.region = Rect2i(idle_column * CELL_SIZE.x, 0, CELL_SIZE.x, CELL_SIZE.y)
+        if side_idle_sheet != null and side_idle_sheet.get_width() == 48 and side_idle_sheet.get_height() == 32:
+            atlas.atlas = side_idle_sheet
+            var idle_column: int = 0 if facing == "left" else 1
+            atlas.region = Rect2i(idle_column * CELL_SIZE.x, 0, CELL_SIZE.x, CELL_SIZE.y)
+        else:
+            # Never make the player disappear because of a missing idle asset.
+            push_warning("Neutral idle image unavailable: using the walking sheet idle.")
+            atlas.atlas = spritesheet
+            atlas.region = Rect2i(CELL_SIZE.x, int(FACING_ROWS[facing]) * CELL_SIZE.y, CELL_SIZE.x, CELL_SIZE.y)
     else:
         atlas.atlas = spritesheet
         atlas.region = Rect2i(column * CELL_SIZE.x, int(FACING_ROWS[facing]) * CELL_SIZE.y, CELL_SIZE.x, CELL_SIZE.y)
