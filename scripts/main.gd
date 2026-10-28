@@ -237,6 +237,7 @@ func _talk() -> void:
         return
     if player_tile.distance_to(Vector2i(16, 12)) <= 2.3:
         keeper_met = true
+        _sfx("confirm")
         for index in range(party.size()):
             var creature: Dictionary = party[index]
             creature["hp"] = _max_hp(creature)
@@ -320,6 +321,7 @@ func _start_wild_battle() -> void:
     wild = _new_creature(spec, rng.randi_range(2, 5))
     mode = "battle"
     phase = "commands"
+    _music("battle")
     _set_battle_message("A wild %s appeared!" % _name(wild))
     _render_battle()
 
@@ -352,6 +354,8 @@ func _use_move(index: int) -> void:
         _enemy_turn()
     _save()
     _render_battle()
+    _sfx("victory" if int(wild["hp"]) == 0 else "hit")
+    _flash_enemy()
 
 func _enemy_turn() -> void:
     if int(wild.get("hp", 0)) <= 0 or party.is_empty():
@@ -392,16 +396,19 @@ func _capture() -> void:
         _render_battle()
         return
     orbs -= 1
+    _sfx("confirm")
     var fraction: float = float(wild["hp"]) / float(_max_hp(wild))
     var odds: float = clampf(0.29 + (1.0 - fraction) * 0.62, 0.29, 0.91)
     if rng.randf() < odds:
         captures += 1
+        _sfx("capture")
         var caught: Dictionary = wild.duplicate(true)
         caught["hp"] = _max_hp(caught)
         party.append(caught)
         _set_battle_message("Click... click... captured!\n%s joined your team!" % _name(caught))
         phase = "result"
     else:
+        _sfx("break")
         _set_battle_message("The seal opened! %s broke free!" % _name(wild))
         _enemy_turn()
     _save()
@@ -413,6 +420,7 @@ func _switch(index: int) -> void:
     if active_index == index:
         return
     active_index = index
+    _sfx("confirm")
     _set_battle_message("Go, %s!" % _name(party[index]))
     _enemy_turn()
     _save()
@@ -449,6 +457,7 @@ func _finish_battle() -> void:
 
 func _render_evolution() -> void:
     mode = "evolution"
+    _sfx("evolve")
     _clear_ui()
     _full_screen_tint(Color("#132739"), 0.95)
     _box(hud, Vector2(25, 18), Vector2(430, 284), CREAM)
@@ -557,6 +566,20 @@ func _choose_leader(index: int) -> void:
         active_index = index
         _save()
         _render_team()
+
+func _flash_enemy() -> void:
+    # Lightweight sprite-area hit flash. Does not alter the battle calculation.
+    if mode != "battle":
+        return
+    var flash: ColorRect = ColorRect.new()
+    flash.position = Vector2(325, 84)
+    flash.size = Vector2(94, 95)
+    flash.color = Color(1.0, 1.0, 1.0, 0.52)
+    flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    hud.add_child(flash)
+    var fade: Tween = create_tween()
+    fade.tween_property(flash, "modulate:a", 0.0, 0.23)
+    fade.tween_callback(Callable(flash, "queue_free"))
 
 func _render_battle() -> void:
     mode = "battle"
