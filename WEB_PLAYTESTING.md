@@ -52,3 +52,7 @@ Review the new motion on `/dev/` before promoting to stable. Existing character 
 ## Full-sprite walking animation concept — October 28, 2026
 
 The development build now uses `assets/hero_walk_sheet.png`, a new **3-column by 4-row original sprite atlas** (24×32 pixels per frame), produced from a Wildbound walking-animation concept. `scripts/character_art.gd` selects *complete* directional poses instead of deforming the previous standing sprite's legs and boots. Each facing has separate left-step, centered idle, and right-step artwork. The old procedural leg manipulation has been removed. Movement speed, camera easing, collisions, creatures, and saves are unchanged. This is an art playtest, not a stable release; check all directions for foot motion, color consistency, and silhouette alignment.
+
+## Side-facing idle correction — October 28, 2026
+
+The `develop` build includes `assets/hero_idle_sides.png`, two neutral standing side poses, each 24×32. The previously selected center side frames looked as though the player was mid-stride while stationary. The corrected standing sprites keep the current hairstyle and outfit but align both boots under the character. The four-direction walk animation frames, camera movement, collision and saves are unchanged. Preview test at `/dev/` before promoting to stable.
