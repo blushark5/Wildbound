@@ -121,7 +121,7 @@ func _create_world() -> void:
     keeper_sprite.position = Vector2(16 * 16 - 4, 12 * 16 - 16)
     add_child(keeper_sprite)
     player_sprite = Sprite2D.new()
-    player_sprite.texture = load("res://assets/hero_down.png")
+    player_sprite.texture = load("res://assets/hero_down_v2.svg")
     player_sprite.centered = false
     add_child(player_sprite)
     _place_hero()
@@ -144,7 +144,7 @@ func _create_world() -> void:
 
 func _place_hero() -> void:
     player_sprite.position = Vector2(player_tile.x * 16 - 4, player_tile.y * 16 - 16)
-    player_sprite.texture = load("res://assets/hero_%s.png" % direction)
+    player_sprite.texture = load("res://assets/hero_%s_v2.svg" % direction)
 
 func _process(delta: float) -> void:
     if mode != "world":
@@ -207,7 +207,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _step(shift: Vector2i) -> void:
     var next_tile: Vector2i = player_tile + shift
-    player_sprite.texture = load("res://assets/hero_%s.png" % direction)
+    player_sprite.texture = load("res://assets/hero_%s_v2.svg" % direction)
     if next_tile.x < 1 or next_tile.y < 1 or next_tile.x >= 51 or next_tile.y >= 28:
         return
     if blocked.has(next_tile) or next_tile == Vector2i(16, 12):
