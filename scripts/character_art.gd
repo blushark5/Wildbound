@@ -7,6 +7,7 @@ extends RefCounted
 const CELL_SIZE: Vector2i = Vector2i(24, 32)
 const FACING_ROWS: Dictionary = {"down":0, "up":1, "left":2, "right":3}
 var spritesheet: Texture2D
+var side_idle_sheet: Texture2D
 var cached_frames: Dictionary = {}
 
 func sprite(facing: String, pose: int = 0) -> Texture2D:
@@ -26,8 +27,21 @@ func sprite(facing: String, pose: int = 0) -> Texture2D:
             push_error("Missing hero_walk_sheet.png")
             return null
     var atlas: AtlasTexture = AtlasTexture.new()
-    atlas.atlas = spritesheet
-    atlas.region = Rect2i(column * CELL_SIZE.x, int(FACING_ROWS[facing]) * CELL_SIZE.y, CELL_SIZE.x, CELL_SIZE.y)
+    # Side-facing idle art has boots together under the body. The earlier
+    # sheet's middle side frames were action poses and looked like walking
+    # even after movement stopped. Leave every walking frame unchanged.
+    if pose == 0 and (facing == "left" or facing == "right"):
+        if side_idle_sheet == null:
+            side_idle_sheet = load("res://assets/hero_idle_sides.png") as Texture2D
+        if side_idle_sheet == null:
+            push_error("Missing neutral side idle sprites")
+            return null
+        atlas.atlas = side_idle_sheet
+        var idle_column: int = 0 if facing == "left" else 1
+        atlas.region = Rect2i(idle_column * CELL_SIZE.x, 0, CELL_SIZE.x, CELL_SIZE.y)
+    else:
+        atlas.atlas = spritesheet
+        atlas.region = Rect2i(column * CELL_SIZE.x, int(FACING_ROWS[facing]) * CELL_SIZE.y, CELL_SIZE.x, CELL_SIZE.y)
     atlas.filter_clip = true
     cached_frames[key] = atlas
     return atlas
