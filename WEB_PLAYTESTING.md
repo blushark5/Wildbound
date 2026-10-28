@@ -80,3 +80,11 @@ Stable release on `main` remains unchanged.
 The latest `develop` art test changes the four prototype trees from 64×80 pixels to 32×40 native-size nearest-neighbor sprites. Their positions were moved away from the narrow central divider to blocked perimeter forest cells, so canopies do not overlap the player on walkable tiles. No tree fading/transparency logic, collision changes, save changes, or gameplay modifications were added.
 
 The Godot development workflow now tests each full tree sprite footprint against the 24×32 player rectangle at every accessible tile; it fails the build if any tree can cover the character. Check the result at https://blushark5.github.io/Wildbound/dev/ .
+
+## Willowrest complete scene — browser art acceptance pass
+
+- The uploaded `assets/willowrest_world.png` is an **original** 1152×336 full-scene illustration used by the `develop` branch after PR #1.
+- Development now activates the dedicated 24-pixel tile-grid path and associated map geometry, not the old layered procedural village art.
+- The new save namespace avoids loading old map coordinates into the redesigned layout.
+- The main web address retains the previously approved playable release. The experimental complete-scene game is at `https://blushark5.github.io/Wildbound/dev/`.
+- Preview is pending in-browser visual/playability approval, especially collision boundaries, path alignment, keeper placement, water shimmer, and wild encounters.
