@@ -15,7 +15,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  preview_validation:
+    name: Validate development web export
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v4
+      - name: Install Godot 4.7.2 and export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+      - name: Import assets
+        run: godot --headless --path . --editor --import --quit
+      - name: Export development web build
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-dev-check"
+          godot --headless --path . --export-release "Web" "$RUNNER_TEMP/wildbound-dev-check/index.html"
+          test -s "$RUNNER_TEMP/wildbound-dev-check/index.html"
+          test -s "$RUNNER_TEMP/wildbound-dev-check/index.wasm"
+          test -s "$RUNNER_TEMP/wildbound-dev-check/index.pck"
+      - name: Headless gameplay startup
+        run: godot --headless --path . --quit-after 5
+
   web:
+    if: github.ref == 'refs/heads/main'
     name: Build Web and deploy Pages
     runs-on: ubuntu-latest
     environment:
