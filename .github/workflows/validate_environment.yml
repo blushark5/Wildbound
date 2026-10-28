@@ -1,0 +1,37 @@
+name: Validate Willowrest Environment Rebuild
+
+on:
+  push:
+    branches: [feature/willowrest-full-environment-v1]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  environment-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+      - name: Import and validate GDScript
+        run: godot --headless --path . --editor --import --quit
+      - name: Validate illustrated Willowrest map connectivity
+        run: godot --headless --path . --script res://tests/check_willowrest_map.gd
+      - name: Verify legacy-mode gameplay startup
+        run: godot --headless --path . --quit-after 5
+      - name: Generate temporary illustrated-world texture for integration testing
+        run: godot --headless --path . --script res://tests/create_environment_ci_texture.gd
+      - name: Import new environment texture and check GDScript
+        run: godot --headless --path . --editor --import --quit
+      - name: Verify complete illustrated-world gameplay startup
+        run: godot --headless --path . --quit-after 5
+      - name: Web export smoke test
+        run: |
+          mkdir -p "$RUNNER_TEMP/env-check"
+          godot --headless --path . --export-release "Web" "$RUNNER_TEMP/env-check/index.html"
+          test -s "$RUNNER_TEMP/env-check/index.html"
