@@ -6,6 +6,7 @@ extends Node2D
 const SAVE_PATH: String = "user://wildbound_first_steps_v0_1.json"
 const AUDIO_SCRIPT: Script = preload("res://scripts/audio.gd")
 const CHARACTER_ART: Script = preload("res://scripts/character_art.gd")
+const TREE_ART_SCRIPT: Script = preload("res://scripts/tree_art.gd")
 const SPECIES: Dictionary = {
     "spriglet": {"name": "Spriglet", "evolution": "Thornhart", "affinity": "Grove", "hp": 24, "attack": 9, "move": "Briar Dart", "move_power": 13},
     "brinlet": {"name": "Brinlet", "evolution": "Tidemare", "affinity": "Tide", "hp": 25, "attack": 8, "move": "Ripple Jet", "move_power": 13},
@@ -123,6 +124,11 @@ func _create_world() -> void:
     overworld_polish.centered = false
     overworld_polish.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     add_child(overworld_polish)
+    # Dedicated transparent forest sprites, rendered above base terrain but
+    # below people. Trunk positions use pre-existing blocked grove cells.
+    var tree_art: Node2D = TREE_ART_SCRIPT.new() as Node2D
+    tree_art.name = "WillowrestTrees"
+    add_child(tree_art)
     keeper_sprite = Sprite2D.new()
     keeper_sprite.texture = load("res://assets/keeper.png")
     keeper_sprite.centered = false
