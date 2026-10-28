@@ -5,6 +5,7 @@ extends Node2D
 
 const SAVE_PATH: String = "user://wildbound_first_steps_v0_1.json"
 const AUDIO_SCRIPT: Script = preload("res://scripts/audio.gd")
+const CHARACTER_ART: Script = preload("res://scripts/character_art.gd")
 const SPECIES: Dictionary = {
     "spriglet": {"name": "Spriglet", "evolution": "Thornhart", "affinity": "Grove", "hp": 24, "attack": 9, "move": "Briar Dart", "move_power": 13},
     "brinlet": {"name": "Brinlet", "evolution": "Tidemare", "affinity": "Tide", "hp": 25, "attack": 8, "move": "Ripple Jet", "move_power": 13},
@@ -45,11 +46,13 @@ var battle_pages: Array[String] = []
 var battle_page_index: int = 0
 var evolution_notice: Dictionary = {}
 var audio_engine: Node
+var character_art: RefCounted
 
 func _ready() -> void:
     rng.randomize()
     audio_engine = AUDIO_SCRIPT.new()
     add_child(audio_engine)
+    character_art = CHARACTER_ART.new()
     _load_map()
     _create_world()
     _render_title()
@@ -103,6 +106,10 @@ func _load_map() -> void:
     for coordinate in meta.get("tall_grass", []):
         tall[Vector2i(int(coordinate[0]), int(coordinate[1]))] = true
 
+func _hero_texture(facing: String) -> Texture2D:
+    var loaded: Variant = character_art.call("sprite", facing)
+    return loaded as Texture2D
+
 func _create_world() -> void:
     world_map = Sprite2D.new()
     world_map.texture = load("res://assets/world.png")
@@ -121,8 +128,9 @@ func _create_world() -> void:
     keeper_sprite.position = Vector2(16 * 16 - 4, 12 * 16 - 16)
     add_child(keeper_sprite)
     player_sprite = Sprite2D.new()
-    player_sprite.texture = load("res://assets/hero_down_v2.svg")
+    player_sprite.texture = _hero_texture("down")
     player_sprite.centered = false
+    player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     add_child(player_sprite)
     _place_hero()
     follow_camera = Camera2D.new()
@@ -144,7 +152,7 @@ func _create_world() -> void:
 
 func _place_hero() -> void:
     player_sprite.position = Vector2(player_tile.x * 16 - 4, player_tile.y * 16 - 16)
-    player_sprite.texture = load("res://assets/hero_%s_v2.svg" % direction)
+    player_sprite.texture = _hero_texture(direction)
 
 func _process(delta: float) -> void:
     if mode != "world":
@@ -207,7 +215,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _step(shift: Vector2i) -> void:
     var next_tile: Vector2i = player_tile + shift
-    player_sprite.texture = load("res://assets/hero_%s_v2.svg" % direction)
+    player_sprite.texture = _hero_texture(direction)
     if next_tile.x < 1 or next_tile.y < 1 or next_tile.x >= 51 or next_tile.y >= 28:
         return
     if blocked.has(next_tile) or next_tile == Vector2i(16, 12):
