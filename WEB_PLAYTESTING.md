@@ -42,3 +42,9 @@ Other concept-board illustration pieces (houses, foliage, water animation frames
 - Existing camera synchronization, collisions, encounters, and browser save formats remain unchanged.
 - This is the first movement polish candidate; inspect at in-game scale and watch for leg clipping or a flickering walk cycle.
 - Continue testing at https://blushark5.github.io/Wildbound/dev/ and compare to stable https://blushark5.github.io/Wildbound/ .
+
+## Footstep correction — revised development preview
+
+The October 28 gait hotfix replaces the earlier ankle-only wobble: each alternate stride now moves the full leg *and* boot, with a visible leading shoe and lifted foot. These are small 24×32 pixel edits to the approved protagonist artwork. Movement speed, camera timing, encounters and saves are unchanged.
+
+Review the new motion on `/dev/` before promoting to stable. Existing character stills and gameplay remain unchanged.
