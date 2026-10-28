@@ -56,3 +56,9 @@ The development build now uses `assets/hero_walk_sheet.png`, a new **3-column by
 ## Side-facing idle correction — October 28, 2026
 
 The `develop` build includes `assets/hero_idle_sides.png`, two neutral standing side poses, each 24×32. The previously selected center side frames looked as though the player was mid-stride while stationary. The corrected standing sprites keep the current hairstyle and outfit but align both boots under the character. The four-direction walk animation frames, camera movement, collision and saves are unchanged. Preview test at `/dev/` before promoting to stable.
+
+## Side idle invisibility hotfix
+
+The first neutral side-idle PNG was malformed, causing the player to disappear while standing left or right. The fixed `develop` build uses a structurally verified 48×32 PNG and a fallback to the normal walk-sheet idle pose if that image fails to load. The development workflow now runs `tests/check_side_idle.gd` to require **visible nontransparent pixels** in both idle poses before exporting. This repair does not change movement timing, maps, creatures, or save data.
+
+Please test side-facing idle at https://blushark5.github.io/Wildbound/dev/ and refresh with Ctrl+F5 if needed.
