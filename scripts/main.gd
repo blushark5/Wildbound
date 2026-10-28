@@ -3,10 +3,11 @@ extends Node2D
 # WILDBOUND: FIRST STEPS. Original GBA-era creature RPG prototype.
 # Intentionally independent of the incremental / idle Wildbound v0.x prototype.
 
-const SAVE_PATH: String = "user://wildbound_first_steps_v0_1.json"
+const SAVE_PATH: String = "user://wildbound_first_steps_v0_2.json"
 const AUDIO_SCRIPT: Script = preload("res://scripts/audio.gd")
 const CHARACTER_ART: Script = preload("res://scripts/character_art.gd")
 const TREE_ART_SCRIPT: Script = preload("res://scripts/tree_art.gd")
+const WILLOWREST_MAP_SCRIPT: Script = preload("res://scripts/willowrest_map.gd")
 const SPECIES: Dictionary = {
     "spriglet": {"name": "Spriglet", "evolution": "Thornhart", "affinity": "Grove", "hp": 24, "attack": 9, "move": "Briar Dart", "move_power": 13},
     "brinlet": {"name": "Brinlet", "evolution": "Tidemare", "affinity": "Tide", "hp": 25, "attack": 8, "move": "Ripple Jet", "move_power": 13},
@@ -49,6 +50,12 @@ var evolution_notice: Dictionary = {}
 var audio_engine: Node
 var character_art: RefCounted
 var walk_pose: int = 0
+var new_environment: bool = false
+var map_tile_size: int = 16
+var map_width: int = 52
+var map_height: int = 29
+var keeper_tile: Vector2i = Vector2i(16, 12)
+var spawn_tile: Vector2i = Vector2i(12, 12)
 
 func _ready() -> void:
     rng.randomize()
@@ -94,6 +101,22 @@ func _unhandled_input(event: InputEvent) -> void:
             _dismiss_world_notice()
 
 func _load_map() -> void:
+    # The new illustrated scene activates only when its real PNG exists.
+    # This makes the art-integration branch safe before large binary assets
+    # are imported; no extra sprites are painted on the old map.
+    new_environment = ResourceLoader.exists("res://assets/willowrest_world.png")
+    if new_environment:
+        map_tile_size = 24
+        map_width = 48
+        map_height = 14
+        keeper_tile = Vector2i(22, 7)
+        spawn_tile = Vector2i(24, 7)
+        player_tile = spawn_tile
+        var model: RefCounted = WILLOWREST_MAP_SCRIPT.new()
+        var layout: Dictionary = model.call("build")
+        blocked = layout["blocked"]
+        tall = layout["tall"]
+        return
     var file: FileAccess = FileAccess.open("res://world.json", FileAccess.READ)
     if file == null:
         push_error("Missing world.json")
@@ -112,40 +135,69 @@ func _hero_texture(facing: String, pose: int = 0) -> Texture2D:
     var loaded: Variant = character_art.call("sprite", facing, pose)
     return loaded as Texture2D
 
+func _tile_hero_position(cell: Vector2i) -> Vector2:
+    if new_environment:
+        return Vector2(cell.x * 24 - 3, cell.y * 24 - 16)
+    return Vector2(cell.x * 16 - 4, cell.y * 16 - 16)
+
+func _tile_camera_position(cell: Vector2i) -> Vector2:
+    return Vector2(cell.x * map_tile_size + map_tile_size / 2, cell.y * map_tile_size + map_tile_size / 2)
+
+func _keeper_art() -> Texture2D:
+    # Reuse the approved protagonist rendering quality for a recolored village
+    # NPC until a dedicated illustrated Keeper character is approved.
+    var original: Texture2D = _hero_texture("down")
+    var img: Image = original.get_image()
+    img.convert(Image.FORMAT_RGBA8)
+    for y in range(img.get_height()):
+        for x in range(img.get_width()):
+            var c: Color = img.get_pixel(x, y)
+            if c.a < 0.5:
+                continue
+            if c.b > c.r * 1.18 and c.b > c.g * 1.12:
+                img.set_pixel(x, y, Color(c.r * 0.85, c.g * 1.24, c.b * 0.70, c.a))
+    return ImageTexture.create_from_image(img)
+
 func _create_world() -> void:
     world_map = Sprite2D.new()
-    world_map.texture = load("res://assets/world.png")
+    world_map.texture = load("res://assets/willowrest_world.png") if new_environment else load("res://assets/world.png")
     world_map.centered = false
+    world_map.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     add_child(world_map)
-    # The original world image remains intact. This transparent original art
-    # layer adds details without moving collision tiles or save positions.
-    var overworld_polish: Sprite2D = Sprite2D.new()
-    overworld_polish.texture = load("res://assets/world_polish.svg")
-    overworld_polish.centered = false
-    overworld_polish.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-    add_child(overworld_polish)
-    # Dedicated transparent forest sprites, rendered above base terrain but
-    # below people. Trunk positions use pre-existing blocked grove cells.
-    var tree_art: Node2D = TREE_ART_SCRIPT.new() as Node2D
-    tree_art.name = "WillowrestTrees"
-    add_child(tree_art)
+    if new_environment:
+        var mat: ShaderMaterial = ShaderMaterial.new()
+        mat.shader = load("res://scripts/willowrest_water.gdshader") as Shader
+        world_map.material = mat
+    else:
+        # Old preview art is deliberately never rendered on top of the new map.
+        var overworld_polish: Sprite2D = Sprite2D.new()
+        overworld_polish.texture = load("res://assets/world_polish.svg")
+        overworld_polish.centered = false
+        overworld_polish.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+        add_child(overworld_polish)
+        var tree_art: Node2D = TREE_ART_SCRIPT.new() as Node2D
+        tree_art.name = "WillowrestTrees"
+        add_child(tree_art)
     keeper_sprite = Sprite2D.new()
-    keeper_sprite.texture = load("res://assets/keeper.png")
+    keeper_sprite.texture = _keeper_art() if new_environment else load("res://assets/keeper.png")
     keeper_sprite.centered = false
-    keeper_sprite.position = Vector2(16 * 16 - 4, 12 * 16 - 16)
+    keeper_sprite.position = _tile_hero_position(keeper_tile)
+    keeper_sprite.scale = Vector2(1.25, 1.25) if new_environment else Vector2.ONE
+    keeper_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     add_child(keeper_sprite)
     player_sprite = Sprite2D.new()
     player_sprite.texture = _hero_texture("down")
     player_sprite.centered = false
     player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    player_sprite.scale = Vector2(1.25, 1.25) if new_environment else Vector2.ONE
     add_child(player_sprite)
     _place_hero()
     follow_camera = Camera2D.new()
     follow_camera.limit_left = 0
     follow_camera.limit_top = 0
-    follow_camera.limit_right = 52 * 16
-    follow_camera.limit_bottom = 29 * 16
-    follow_camera.position = Vector2(player_tile.x * 16 + 8, player_tile.y * 16 + 8)
+    follow_camera.limit_right = map_width * map_tile_size
+    follow_camera.limit_bottom = map_height * map_tile_size
+    follow_camera.position = _tile_camera_position(player_tile)
     # The camera must use the same movement clock as the player.
     follow_camera.process_callback = Camera2D.CAMERA2D_PROCESS_IDLE
     add_child(follow_camera)
@@ -159,7 +211,7 @@ func _create_world() -> void:
 
 func _place_hero() -> void:
     walk_pose = 0
-    player_sprite.position = Vector2(player_tile.x * 16 - 4, player_tile.y * 16 - 16)
+    player_sprite.position = _tile_hero_position(player_tile)
     player_sprite.texture = _hero_texture(direction)
 
 func _process(delta: float) -> void:
@@ -224,9 +276,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _step(shift: Vector2i) -> void:
     var next_tile: Vector2i = player_tile + shift
     player_sprite.texture = _hero_texture(direction)
-    if next_tile.x < 1 or next_tile.y < 1 or next_tile.x >= 51 or next_tile.y >= 28:
+    if next_tile.x < 1 or next_tile.y < 1 or next_tile.x >= map_width - 1 or next_tile.y >= map_height - 1:
         return
-    if blocked.has(next_tile) or next_tile == Vector2i(16, 12):
+    if blocked.has(next_tile) or next_tile == keeper_tile:
         return
     if not return_message.is_empty():
         return_message = ""
@@ -241,9 +293,9 @@ func _step(shift: Vector2i) -> void:
     if movement_tween != null and movement_tween.is_running():
         movement_tween.kill()
     var starting_hero: Vector2 = player_sprite.position
-    var target_hero: Vector2 = Vector2(player_tile.x * 16 - 4, player_tile.y * 16 - 16)
+    var target_hero: Vector2 = _tile_hero_position(player_tile)
     var starting_camera: Vector2 = follow_camera.position
-    var target_camera: Vector2 = Vector2(player_tile.x * 16 + 8, player_tile.y * 16 + 8)
+    var target_camera: Vector2 = _tile_camera_position(player_tile)
     movement_tween = create_tween()
     movement_tween.tween_method(
         Callable(self, "_update_movement").bind(starting_hero, target_hero, starting_camera, target_camera),
@@ -256,22 +308,22 @@ func _update_movement(progress: float, starting_hero: Vector2, target_hero: Vect
     follow_camera.position = starting_camera.lerp(target_camera, progress).round()
 
 func _complete_step(next_tile: Vector2i) -> void:
-    player_sprite.position = Vector2(player_tile.x * 16 - 4, player_tile.y * 16 - 16)
+    player_sprite.position = _tile_hero_position(player_tile)
     player_sprite.texture = _hero_texture(direction)
-    follow_camera.position = Vector2(player_tile.x * 16 + 8, player_tile.y * 16 + 8)
+    follow_camera.position = _tile_camera_position(player_tile)
     is_moving = false
     step_timer = 0.0
     if mode != "world":
         return
     if tall.has(next_tile) and rng.randf() < 0.18:
         _start_wild_battle()
-    elif (next_tile.x == 26 or next_tile.x == 27) and next_tile.y >= 13 and next_tile.y <= 17:
+    elif not new_environment and (next_tile.x == 26 or next_tile.x == 27) and next_tile.y >= 13 and next_tile.y <= 17:
         _render_world()
 
 func _talk() -> void:
     if is_moving:
         return
-    if player_tile.distance_to(Vector2i(16, 12)) <= 2.3:
+    if player_tile.distance_to(keeper_tile) <= 2.3:
         keeper_met = true
         _sfx("confirm")
         for index in range(party.size()):
@@ -480,7 +532,7 @@ func _finish_battle() -> void:
             party[i] = c
         player_tile = Vector2i(12, 12)
         _place_hero()
-        follow_camera.position = Vector2(player_tile.x * 16 + 8, player_tile.y * 16 + 8)
+        follow_camera.position = _tile_camera_position(player_tile)
         return_message = "Keeper Vale healed your team."
         active_index = 0
     else:
@@ -553,10 +605,10 @@ func _choose_starter(species: String) -> void:
     captures = 0
     keeper_met = false
     evolution_notice.clear()
-    player_tile = Vector2i(12, 12)
+    player_tile = spawn_tile
     direction = "down"
     _place_hero()
-    follow_camera.position = Vector2(player_tile.x * 16 + 8, player_tile.y * 16 + 8)
+    follow_camera.position = _tile_camera_position(player_tile)
     return_message = "Your adventure begins! Head east toward the tall grass."
     _sfx("confirm")
     _save()
@@ -755,15 +807,17 @@ func _continue_game() -> void:
     if party.is_empty():
         _render_starters()
         return
-    var location: Array = data.get("position", [12, 12])
+    var location: Array = data.get("position", [spawn_tile.x, spawn_tile.y])
     player_tile = Vector2i(int(location[0]), int(location[1]))
+    if player_tile.x >= map_width - 1 or player_tile.y >= map_height - 1 or blocked.has(player_tile):
+        player_tile = spawn_tile
     active_index = clampi(int(data.get("active", 0)), 0, party.size() - 1)
     orbs = int(data.get("seals", 5))
     battles_won = int(data.get("victories", 0))
     captures = int(data.get("captures", 0))
     keeper_met = bool(data.get("keeper", false))
     _place_hero()
-    follow_camera.position = Vector2(player_tile.x * 16 + 8, player_tile.y * 16 + 8)
+    follow_camera.position = _tile_camera_position(player_tile)
     _render_world()
 
 func _save() -> void:
