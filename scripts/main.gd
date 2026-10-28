@@ -108,6 +108,13 @@ func _create_world() -> void:
     world_map.texture = load("res://assets/world.png")
     world_map.centered = false
     add_child(world_map)
+    # The original world image remains intact. This transparent original art
+    # layer adds details without moving collision tiles or save positions.
+    var overworld_polish: Sprite2D = Sprite2D.new()
+    overworld_polish.texture = load("res://assets/world_polish.svg")
+    overworld_polish.centered = false
+    overworld_polish.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    add_child(overworld_polish)
     keeper_sprite = Sprite2D.new()
     keeper_sprite.texture = load("res://assets/keeper.png")
     keeper_sprite.centered = false
