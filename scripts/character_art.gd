@@ -8,10 +8,45 @@ const PNG_DATA: Dictionary = {
     "left": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAgCAMAAAA/gEgKAAAAkFBMVEUeWGZSXGbUlGudak7i4M6emZHy1a6VOC0TEhkILlDjtY1ddIetVzq3xMQNbYK0vcHjeVNlKixCpaYAAAAxJytONzJzRDeUVTxISU0TGykUJDJtOC8xNDiKSzitZUMVN1Owt7lKKykwO0cuSE74xpVpa2ptdnSjrK1TVVSXW0LGSjVWQztqV07NVDrwqHUVFRonjlwKAAAAMHRSTlP/////////////////////////AP/////////////////////////////////////Y5iHdAAABnklEQVR42nXS15ajMAwAUJuaOmWRXDEdQgnJ///dijCThYflUM+VbCSbJf852Ouu1L3rOnqpENsdDJlAxGlCN9zTf9C3KGQmhbDOYYkvWqBNUUp/ASGkpIdSK3AKz7KLdMK5IRuc6NeM1AqKziQNJi9ykMIiKAKoaAJUGZBZmVEWAvRLRne3wP4wVjsHJcULW/brHACGLQficgGdsIIyRkqLNavZB6sNgDZqrUPpDJ5+BilQzgcz+l35wVM8OvngP16j5m/AE+dB4w1eg7rUef0L4EenJmoenucDzaDevWrvXtQ03uNLHAg2TUySSVI0VaaNUdu200LA86DzY56zH/kFanye8y7Xdnb9LkOdWRsEnbHzl6s3kIbXYxgEQfUdz7HZQhTVaRiGuZ1jm24hCNh08nwdj6PbZYTd1ESRX46XeQ+A8Ggeh3IcR1ttoeK6FFbrMrZq+7s9lZYfj0zX6b7yxGh25pyZNtmDMrRsSlVabaH45MABBO3CJ/8sih8oiuIawhNpg1iheVAUtxWut9utCGkPlJiiPhfLZ5L8BQcoQB7iKSSfAAAAAElFTkSuQmCC",
     "right": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAgCAMAAAA/gEgKAAAAkFBMVEUdV2djaGrhn26caVCtVDjacEnv1aqXn57q6dWdOy4MLEtdRj7LUjYrk4pmLiykhWzdu5YREB8PdIJkoJBAPUN0fYK2v8G4wsMAAAB0RThPNzQuJy2FSjkQGiprOjAWJjUzNjqTVDsRNlNKR0istbc2RUz4xpENEx0vOkmsaEcDBxZRVFJnWVFUKiqkrKslGyM2TK0tAAAAMHRSTlP///////////////////////////////8A//////////////////////////////9GarqkAAABjElEQVR42nWS6XajMAyFvbBlT6fTTi15xZglEHj/txunIanbOaMfYO53JKRrkY//BFnfdudpjADUpwA/vIYYQjhBU2B3IorCOaeRTv4BPEonoy7iI57ArmBEFEP2KWfDwKWeHhmjkFmWOTc4KfXgtAZ6zwARlUzwXMBkQcJi7xm/Yzda6kVIS14PBAWspRABrtYED4cDIcQg+DvoFaIhv6JGrNZSmZGuPzefcjCddh0O4TkgrW8FGL9wdh5H1j9Bb5RFZLlmbXGazrvEEouAnOURtG3BVeJVWFBBBDHYlJo4GhNbk5yxAdL7CIbUt+g61acX5d3+uK0DJbW/O7sCI/L9sQ5FNdcTvyTgorPNVb1WVRVomYLuutnLF1qdT1gW34DIbynTwNjpR6l8E0nH26LgLwmwOsv2R1TL0LJ17Ee7oK9q26tlJ7D7sXDGRIvrrcJ/NtFso/f91+BfoPc+XqUK38BcUQVxaxQILJsnaJrmD+2ElI4j2jJ+3kHzPpfN221VQFjazOXczBH8BbdkSGzA8AJrAAAAAElFTkSuQmCC"
 }
-# Standing poses come from our original concept; walking poses adjust only a few
-# existing lower-leg pixels so the face, clothing and backpack never change.
-# 0 = standing, 1 and 2 = alternating strides (each completed tile toggles).
+# Each walking frame is a native 24×32 pixel edit of the approved concept
+# character. Entire legs AND boots are redrawn so both feet visibly leave their
+# idle positions; the upper body/face/backpack remain unchanged.
+# pose 0 = original idle, pose 1/2 = alternating left and right footfalls.
+const OUTLINE: Color = Color8(25, 30, 41)
+const PANT: Color = Color8(26, 62, 84)
+const PANT_LIGHT: Color = Color8(39, 84, 111)
+const BOOT: Color = Color8(104, 60, 49)
+const BOOT_HIGHLIGHT: Color = Color8(145, 86, 61)
+const BOOT_SHADE: Color = Color8(72, 45, 44)
+const SHADOW: Color = Color8(153, 163, 164, 140)
+
 var textures: Dictionary = {}
+
+func _rect(img: Image, x1: int, y1: int, x2: int, y2: int, col: Color) -> void:
+    img.fill_rect(Rect2i(x1, y1, x2 - x1 + 1, y2 - y1 + 1), col)
+
+func _leg_front(img: Image, x: int, ankle_y: int, foot_x: int) -> void:
+    # Pants, left/right ankle and the same boot move together as a unit.
+    _rect(img, x + 1, 25, x + 4, 26, OUTLINE)
+    _rect(img, x + 1, 26, x + 4, ankle_y - 1, PANT)
+    _rect(img, x + 2, 26, x + 2, maxi(26, ankle_y - 2), PANT_LIGHT)
+    _rect(img, foot_x, ankle_y, foot_x + 6, ankle_y + 2, OUTLINE)
+    _rect(img, foot_x + 1, ankle_y, foot_x + 5, ankle_y + 1, BOOT)
+    img.set_pixel(foot_x + 3, ankle_y, BOOT_HIGHLIGHT)
+    _rect(img, foot_x + 1, ankle_y + 2, foot_x + 6, ankle_y + 2, BOOT_SHADE)
+
+func _leg_side(img: Image, x: int, ankle_y: int, foot_x: int, leading: bool) -> void:
+    _rect(img, x, 25, x + 3, 26, OUTLINE)
+    _rect(img, x + 1, 26, x + 3, ankle_y - 1, PANT)
+    _rect(img, x + 2, 26, x + 2, maxi(26, ankle_y - 2), PANT_LIGHT)
+    if leading:
+        # Extended toe is unmistakably further forward than the back shoe.
+        _rect(img, foot_x, ankle_y, foot_x + 6, ankle_y + 2, OUTLINE)
+        _rect(img, foot_x + 1, ankle_y, foot_x + 5, ankle_y + 1, BOOT)
+        img.set_pixel(foot_x + 3, ankle_y, BOOT_HIGHLIGHT)
+    else:
+        _rect(img, foot_x, ankle_y, foot_x + 4, ankle_y + 2, OUTLINE)
+        _rect(img, foot_x + 1, ankle_y, foot_x + 3, ankle_y + 1, BOOT_SHADE)
 
 func sprite(facing: String, pose: int = 0) -> Texture2D:
     var key: String = "%s:%d" % [facing, pose]
@@ -25,23 +60,32 @@ func sprite(facing: String, pose: int = 0) -> Texture2D:
         return null
     var img: Image = base.duplicate() as Image
     if pose != 0:
-        if facing == "up" or facing == "down":
-            # Two alternating footfalls retain the original 24×32 silhouette
-            # and preserve the faint ground contact/shadow pixels.
-            img.fill_rect(Rect2i(2, 27, 20, 3), Color.TRANSPARENT)
-            img.fill_rect(Rect2i(10, 26, 4, 4), Color8(24, 38, 49))
+        img.convert(Image.FORMAT_RGBA8)
+        # Clear the original legs, BOTH stationary shoes, and baked shadow.
+        # Never alter the face or torso.
+        _rect(img, 1, 25, 22, 31, Color.TRANSPARENT)
+        _rect(img, 4, 31, 20, 31, SHADOW)
+        if facing == "down" or facing == "up":
             if pose == 1:
-                img.blend_rect(base, Rect2i(0, 27, 12, 3), Vector2i(0, 26))
-                img.blend_rect(base, Rect2i(12, 27, 12, 3), Vector2i(13, 27))
+                _leg_front(img, 6, 29, 4)
+                _leg_front(img, 14, 27, 14)
             else:
-                img.blend_rect(base, Rect2i(0, 27, 12, 3), Vector2i(1, 27))
-                img.blend_rect(base, Rect2i(12, 27, 12, 3), Vector2i(12, 26))
-        else:
-            # One foot leads in a side view, so shift the lower stride without
-            # distorting the face, cap or backpack.
-            img.fill_rect(Rect2i(2, 27, 20, 3), Color.TRANSPARENT)
-            img.fill_rect(Rect2i(9, 26, 7, 4), Color8(27, 43, 54))
-            img.blend_rect(base, Rect2i(2, 26, 20, 4), Vector2i(3 if pose == 1 else 1, 26))
+                _leg_front(img, 6, 27, 5)
+                _leg_front(img, 14, 29, 14)
+        elif facing == "right":
+            if pose == 1:
+                _leg_side(img, 7, 27, 6, false)
+                _leg_side(img, 13, 29, 15, true)
+            else:
+                _leg_side(img, 7, 29, 5, true)
+                _leg_side(img, 13, 27, 14, false)
+        elif facing == "left":
+            if pose == 1:
+                _leg_side(img, 11, 27, 13, false)
+                _leg_side(img, 6, 29, 3, true)
+            else:
+                _leg_side(img, 11, 29, 13, true)
+                _leg_side(img, 6, 27, 4, false)
     var texture: ImageTexture = ImageTexture.create_from_image(img)
     textures[key] = texture
     return texture
