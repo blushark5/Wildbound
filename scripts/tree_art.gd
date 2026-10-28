@@ -1,32 +1,41 @@
 extends Node2D
-# Willowrest environment art study: real transparent pixel sprites extracted
-# and cleaned from Wildbound's approved original environment concept.
-# Atlas: four 64x80 cells, variations 0-2 broadleaf / 3 evergreen.
-# Trunk bases sit on EXISTING blocked tiles. No collision or map changes.
-const CELL_SIZE: Vector2i = Vector2i(64, 80)
-const GROVE_SPOTS: Array[Vector3i] = [
-    Vector3i(25, 5, 0),
-    Vector3i(25, 10, 2),
-    Vector3i(25, 22, 1),
-    Vector3i(25, 26, 3),
+# Small-scale Willowrest tree art study using four original concept-derived PNGs.
+# Deliberately place them on the inaccessible outer boundary, not the
+# one-tile-wide interior divider: otherwise the canopy covers walkable ground.
+# No proximity fades, visibility tricks, collision or save changes.
+const SOURCE_CELL: Vector2i = Vector2i(64, 80)
+const DISPLAY_CELL: Vector2i = Vector2i(32, 40)
+# Sprite foot positions in map pixels; first two are in the northern forest.
+# The other two sit partly offscreen on the left/right boundary like the
+# pre-existing border artwork. All avoid every accessible player tile.
+const TREE_SPOTS: Array[Vector3i] = [
+    Vector3i(36 * 16 + 8, 32, 0),
+    Vector3i(39 * 16 + 8, 32, 2),
+    Vector3i(8, 15 * 16, 1),
+    Vector3i(51 * 16 + 8, 18 * 16, 3),
 ]
 
 func _ready() -> void:
-    var atlas_image: Texture2D = load("res://assets/trees_atlas.png") as Texture2D
-    if atlas_image == null:
+    var atlas: Texture2D = load("res://assets/trees_atlas.png") as Texture2D
+    if atlas == null:
         push_error("Wildbound tree atlas unavailable")
         return
-    for spot in GROVE_SPOTS:
-        var region: AtlasTexture = AtlasTexture.new()
-        region.atlas = atlas_image
-        region.region = Rect2i(spot.z * CELL_SIZE.x, 0, CELL_SIZE.x, CELL_SIZE.y)
-        region.filter_clip = true
+    var source: Image = atlas.get_image()
+    if source == null or source.is_empty():
+        push_error("Wildbound tree atlas could not be read")
+        return
+    source.convert(Image.FORMAT_RGBA8)
+    var frames: Array[Texture2D] = []
+    for i in range(4):
+        var img: Image = source.get_region(Rect2i(i * SOURCE_CELL.x, 0, SOURCE_CELL.x, SOURCE_CELL.y))
+        # Integer-sized half-resolution pixels, no smoothing or new art noise.
+        img.resize(DISPLAY_CELL.x, DISPLAY_CELL.y, Image.INTERPOLATE_NEAREST)
+        frames.append(ImageTexture.create_from_image(img))
+    for spot in TREE_SPOTS:
         var sprite: Sprite2D = Sprite2D.new()
-        sprite.name = "Tree_%d_%d" % [spot.x, spot.y]
-        sprite.texture = region
+        sprite.name = "Tree_at_%d_%d" % [spot.x, spot.y]
+        sprite.texture = frames[spot.z]
         sprite.centered = false
         sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-        # Foot of the tree is anchored on the already impassable central grove.
-        var foot: Vector2 = Vector2(spot.x * 16 + 8, (spot.y + 1) * 16)
-        sprite.position = foot - Vector2(32, 80)
+        sprite.position = Vector2(spot.x - DISPLAY_CELL.x / 2, spot.y - DISPLAY_CELL.y)
         add_child(sprite)
