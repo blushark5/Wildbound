@@ -30,6 +30,8 @@ jobs:
           include-templates: true
       - name: Import assets
         run: godot --headless --path . --editor --import --quit
+      - name: Verify neutral side-idle textures contain visible sprites
+        run: godot --headless --path . --script res://tests/check_side_idle.gd
       - name: Export development web build
         run: |
           mkdir -p "$RUNNER_TEMP/wildbound-dev-check"
