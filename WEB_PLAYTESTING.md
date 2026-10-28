@@ -62,3 +62,15 @@ The `develop` build includes `assets/hero_idle_sides.png`, two neutral standing 
 The first neutral side-idle PNG was malformed, causing the player to disappear while standing left or right. The fixed `develop` build uses a structurally verified 48×32 PNG and a fallback to the normal walk-sheet idle pose if that image fails to load. The development workflow now runs `tests/check_side_idle.gd` to require **visible nontransparent pixels** in both idle poses before exporting. This repair does not change movement timing, maps, creatures, or save data.
 
 Please test side-facing idle at https://blushark5.github.io/Wildbound/dev/ and refresh with Ctrl+F5 if needed.
+
+## Environment tree atlas pilot — October 28, 2026
+
+The `develop` preview contains the first **approved-concept-derived environmental sprites**, isolated as four transparent 64×80 PNG frames in `assets/trees_atlas.png`. Three are broadleaf variations, one is evergreen. The game instantiates them using `scripts/tree_art.gd` at **already blocked tiles** of the central forest boundary (x=25, y=5/10/22/26). No new collision or encounter positions are added.
+
+- This is an intentional small pilot, not a completed forest or terrain replacement.
+- Art was extracted from Wildbound's original environment concept, cleaned into a transparent atlas and palette-limited for a pixel RPG.
+- The existing background art and geometry remain in place so placement can be reviewed in the browser.
+- `tests/check_tree_art.gd` validates atlas dimensions, visible pixels, four instantiated sprites and blocked trunk locations.
+- Review size, overlap, style consistency and tree placement at `https://blushark5.github.io/Wildbound/dev/` before making a broader environment change.
+
+Stable release on `main` remains unchanged.
