@@ -1,0 +1,92 @@
+name: Build and publish Wildbound Web
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Build Web and deploy Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout stable main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Install Godot 4.7.2 with export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import assets and validate stable project
+        run: godot --headless --path . --editor --import --quit
+
+      - name: Export stable web game
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site"
+          godot --headless --path . --export-release "Web" "$RUNNER_TEMP/wildbound-site/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/index.wasm"
+          test -s "$RUNNER_TEMP/wildbound-site/index.pck"
+          touch "$RUNNER_TEMP/wildbound-site/.nojekyll"
+
+      - name: Check whether develop branch exists
+        id: dev_branch
+        run: |
+          if git ls-remote --exit-code --heads origin develop >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout development build
+        if: steps.dev_branch.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          path: experimental
+
+      - name: Keep preview saves separate from stable
+        if: steps.dev_branch.outputs.exists == 'true'
+        run: |
+          sed -i 's/wildbound_first_steps_v0_1.json/wildbound_first_steps_preview_v0_1.json/g' experimental/scripts/main.gd
+
+      - name: Import development assets
+        if: steps.dev_branch.outputs.exists == 'true'
+        run: godot --headless --path experimental --editor --import --quit
+
+      - name: Export preview to /dev/
+        if: steps.dev_branch.outputs.exists == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/dev"
+          godot --headless --path experimental --export-release "Web" "$RUNNER_TEMP/wildbound-site/dev/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/dev/index.html"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/wildbound-site
+
+      - name: Publish website
+        id: deployment
+        uses: actions/deploy-pages@v4

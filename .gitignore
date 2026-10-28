@@ -1,0 +1,11 @@
+# Godot-generated cache / exports
+.godot/
+.import/
+build/
+site/
+*.tmp
+*.log
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
