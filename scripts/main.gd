@@ -4,6 +4,7 @@ extends Node2D
 # Intentionally independent of the incremental / idle Wildbound v0.x prototype.
 
 const SAVE_PATH: String = "user://wildbound_first_steps_v0_1.json"
+const AUDIO_SCRIPT: Script = preload("res://scripts/audio.gd")
 const SPECIES: Dictionary = {
     "spriglet": {"name": "Spriglet", "evolution": "Thornhart", "affinity": "Grove", "hp": 24, "attack": 9, "move": "Briar Dart", "move_power": 13},
     "brinlet": {"name": "Brinlet", "evolution": "Tidemare", "affinity": "Tide", "hp": 25, "attack": 8, "move": "Ripple Jet", "move_power": 13},
@@ -43,12 +44,43 @@ var is_moving: bool = false
 var battle_pages: Array[String] = []
 var battle_page_index: int = 0
 var evolution_notice: Dictionary = {}
+var audio_engine: Node
 
 func _ready() -> void:
     rng.randomize()
+    audio_engine = AUDIO_SCRIPT.new()
+    add_child(audio_engine)
     _load_map()
     _create_world()
     _render_title()
+
+func _music(theme: String) -> void:
+    audio_engine.call("play_track", theme)
+
+func _sfx(kind: String) -> void:
+    audio_engine.call("play_fx", kind)
+
+func _toggle_audio() -> void:
+    audio_engine.call("toggle_mute")
+    _render_pause()
+
+func _dismiss_world_notice() -> void:
+    if return_message.is_empty():
+        return
+    return_message = ""
+    _render_world()
+
+func _unhandled_input(event: InputEvent) -> void:
+    if mode != "world" or return_message.is_empty():
+        return
+    if event is InputEventMouseButton:
+        var click: InputEventMouseButton = event
+        if click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
+            _dismiss_world_notice()
+    elif event is InputEventScreenTouch:
+        var touch: InputEventScreenTouch = event
+        if touch.pressed:
+            _dismiss_world_notice()
 
 func _load_map() -> void:
     var file: FileAccess = FileAccess.open("res://world.json", FileAccess.READ)
@@ -134,7 +166,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
         return
     if mode == "world":
         if key_event.keycode == KEY_E or key_event.keycode == KEY_ENTER or key_event.keycode == KEY_SPACE:
-            _talk()
+            if not return_message.is_empty():
+                _dismiss_world_notice()
+            else:
+                _talk()
         elif key_event.keycode == KEY_ESCAPE:
             _render_pause()
         elif key_event.keycode == KEY_TAB:
@@ -161,6 +196,9 @@ func _step(shift: Vector2i) -> void:
         return
     if blocked.has(next_tile) or next_tile == Vector2i(16, 12):
         return
+    if not return_message.is_empty():
+        return_message = ""
+        _render_world()
     player_tile = next_tile
     is_moving = true
     # Do not teleport the camera while the sprite is moving. Advance both in one tween.
@@ -429,12 +467,14 @@ func _dismiss_evolution() -> void:
 
 func _render_title() -> void:
     mode = "title"
+    _music("title")
     _clear_ui()
     _full_screen_tint(Color("#132739"), 0.83)
     _box(hud, Vector2(49, 36), Vector2(382, 247), CREAM)
     _label(hud, "WILDBOUND", 77, 58, 330, 47, 37, NAVY)
     _label(hud, "F I R S T   S T E P S", 102, 104, 310, 28, 16, Color("#507977"))
     _label(hud, "An original creature-collecting adventure", 75, 139, 340, 28, 14, NAVY)
+    _label(hud, "Exploring: ESC = Menu    TAB = Team", 98, 156, 290, 16, 10, NAVY)
     if FileAccess.file_exists(SAVE_PATH):
         _button(hud, "Continue", 145, 173, 190, 31, Callable(self, "_continue_game"))
         _button(hud, "New Journey", 145, 209, 190, 31, Callable(self, "_confirm_new_journey"))
@@ -473,22 +513,20 @@ func _choose_starter(species: String) -> void:
     _place_hero()
     follow_camera.position = Vector2(player_tile.x * 16 + 8, player_tile.y * 16 + 8)
     return_message = "Your adventure begins! Head east toward the tall grass."
+    _sfx("confirm")
     _save()
     _render_world()
 
 func _render_world() -> void:
     mode = "world"
+    _music("world")
     _clear_ui()
-    # No persistent bottom bar: the overworld and character remain visible.
-    _box(hud, Vector2(5, 4), Vector2(371, 42), NAVY)
-    _label(hud, _quest(), 13, 5, 352, 23, 12, CREAM)
-    _label(hud, "Fernpath Meadow" if player_tile.x >= 27 else "Willowrest Village", 13, 27, 288, 16, 10, GOLD)
-    _button(hud, "TEAM", 391, 5, 83, 26, Callable(self, "_render_team"))
-    _button(hud, "MENU", 391, 34, 83, 26, Callable(self, "_render_pause"))
+    # No persistent HUD over the player. ESC = menu, TAB = team.
+    # Notices stay at the bottom until movement, confirmation, click, or tap.
     if not return_message.is_empty():
-        _box(hud, Vector2(54, 65), Vector2(364, 44), CREAM)
-        _label(hud, return_message, 64, 72, 347, 33, 12, NAVY)
-        return_message = ""
+        _box(hud, Vector2(12, 256), Vector2(456, 58), CREAM)
+        _label(hud, return_message, 25, 263, 429, 31, 13, NAVY)
+        _label(hud, "Move, click or tap to continue", 253, 296, 198, 14, 10, Color("#54786c"))
 
 func _save_and_note() -> void:
     _save()
@@ -602,13 +640,18 @@ func _render_pause() -> void:
     _clear_ui()
     _full_screen_tint(Color("#142d42"), 0.91)
     _box(hud, Vector2(81, 28), Vector2(318, 270), CREAM)
-    _label(hud, "PAUSED", 177, 43, 180, 43, 27, NAVY)
-    _button(hud, "Resume Adventure", 138, 91, 204, 33, Callable(self, "_resume_from_pause"))
-    _button(hud, "Your Team", 138, 132, 204, 32, Callable(self, "_render_team"))
-    _button(hud, "Save", 138, 173, 204, 31, Callable(self, "_save_and_pause_note"))
-    _button(hud, "Save & Title", 138, 214, 204, 31, Callable(self, "_return_to_title"))
-    if not OS.has_feature("web"):
-        _button(hud, "Save & Exit", 138, 254, 204, 31, Callable(self, "_quit_game"))
+    _label(hud, "PAUSED", 177, 34, 180, 39, 27, NAVY)
+    _label(hud, _quest(), 100, 72, 292, 18, 10, NAVY)
+    _button(hud, "Resume Adventure", 138, 94, 204, 33, Callable(self, "_resume_from_pause"))
+    _button(hud, "Your Team", 138, 133, 204, 32, Callable(self, "_render_team"))
+    _button(hud, "Save", 138, 172, 204, 31, Callable(self, "_save_and_pause_note"))
+    _button(hud, "Save & Title", 138, 211, 204, 31, Callable(self, "_return_to_title"))
+    var audio_label: String = "Sound OFF" if bool(audio_engine.get("muted")) else "Sound ON"
+    if OS.has_feature("web"):
+        _button(hud, audio_label, 138, 252, 204, 31, Callable(self, "_toggle_audio"))
+    else:
+        _button(hud, audio_label, 138, 252, 99, 31, Callable(self, "_toggle_audio"))
+        _button(hud, "Save & Exit", 241, 252, 101, 31, Callable(self, "_quit_game"))
 
 func _resume_from_pause() -> void:
     _render_world()
