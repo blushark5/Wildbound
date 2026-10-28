@@ -3,6 +3,11 @@ extends SceneTree
 # visible tree pixels, proper atlas dimensions, and existing collision anchors
 # are required before the browser preview can be approved.
 func _initialize() -> void:
+    # In SceneTree._initialize(), the root has not entered the tree yet.
+    # Defer the instantiation test until Node2D._ready() can run.
+    call_deferred("_validate_trees")
+
+func _validate_trees() -> void:
     var tex: Texture2D = load("res://assets/trees_atlas.png") as Texture2D
     if tex == null or tex.get_width() != 256 or tex.get_height() != 80:
         push_error("Tree atlas missing or incorrect dimensions (expected 256x80)")
@@ -40,7 +45,7 @@ func _initialize() -> void:
         push_error("Tree study did not instantiate four sprites")
         quit(1)
         return
-    for loc in script.get("GROVE_SPOTS"):
+    for loc in script.get_script_constant_map().get("GROVE_SPOTS", []):
         if not blocked.has(Vector2i(loc.x, loc.y)):
             push_error("Tree foot outside blocked forest: %s" % str(loc))
             quit(1)
