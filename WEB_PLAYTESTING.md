@@ -74,3 +74,9 @@ The `develop` preview contains the first **approved-concept-derived environmenta
 - Review size, overlap, style consistency and tree placement at `https://blushark5.github.io/Wildbound/dev/` before making a broader environment change.
 
 Stable release on `main` remains unchanged.
+
+## Smaller forest study — no player overlap
+
+The latest `develop` art test changes the four prototype trees from 64×80 pixels to 32×40 native-size nearest-neighbor sprites. Their positions were moved away from the narrow central divider to blocked perimeter forest cells, so canopies do not overlap the player on walkable tiles. No tree fading/transparency logic, collision changes, save changes, or gameplay modifications were added.
+
+The Godot development workflow now tests each full tree sprite footprint against the 24×32 player rectangle at every accessible tile; it fails the build if any tree can cover the character. Check the result at https://blushark5.github.io/Wildbound/dev/ .
