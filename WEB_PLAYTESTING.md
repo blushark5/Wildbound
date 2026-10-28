@@ -88,3 +88,9 @@ The Godot development workflow now tests each full tree sprite footprint against
 - The new save namespace avoids loading old map coordinates into the redesigned layout.
 - The main web address retains the previously approved playable release. The experimental complete-scene game is at `https://blushark5.github.io/Wildbound/dev/`.
 - Preview is pending in-browser visual/playability approval, especially collision boundaries, path alignment, keeper placement, water shimmer, and wild encounters.
+
+## Keeper Vale and movement / collision repair — October 28, 2026
+
+The full illustrated Willowrest in `develop` now includes a new original 24×32 Keeper Vale NPC (white cap and brown apron) instead of a tinted protagonist. The map collision uses blocked tree, building, flowerbed, bench and fence footprints aligned to the environment art. The player sprite's feet are aligned with its collision position, and holding a movement key now chains walking steps without forced idle pauses. The new `tests/check_willowrest_collision.gd` ensures encounter grass and Keeper Vale are reachable and key scenery cells cannot be entered. All Godot checks and web export passed on the feature branch.
+
+Please test the repaired version at https://blushark5.github.io/Wildbound/dev/ before promoting it to stable.
