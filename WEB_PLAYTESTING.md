@@ -33,3 +33,12 @@ The `develop` browser preview tests four directional character sprites extracted
 The same preview corrects the blue-roof house doorway to the tile-20 approach and adds a connecting footpath. No collision/save schema change. Please compare the new sprite at true game scale and report clipping, color/alpha issues, and visual quality before approval.
 
 Other concept-board illustration pieces (houses, foliage, water animation frames) are not tile-ready and have not been placed over gameplay.
+
+## Walk animation prototype — October 28, 2026
+
+- Development version now cycles **idle / stride A / stride B** using the approved concept-art protagonist in each of four facings.
+- The gait is implemented as pixel-level lower-body adjustments to the existing 24×32 sprite, not a new player design.
+- Footstep frames display only during **valid** tile movement, return to idle on arrival, and alternate on consecutive steps.
+- Existing camera synchronization, collisions, encounters, and browser save formats remain unchanged.
+- This is the first movement polish candidate; inspect at in-game scale and watch for leg clipping or a flickering walk cycle.
+- Continue testing at https://blushark5.github.io/Wildbound/dev/ and compare to stable https://blushark5.github.io/Wildbound/ .
