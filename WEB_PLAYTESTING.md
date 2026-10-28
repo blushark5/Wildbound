@@ -25,3 +25,11 @@ The `develop` preview includes an art-correction pass in response to playtesting
 - No changes to collision coordinates, party data, or saves.
 
 Review on `/dev/` before promoting to `main`.
+
+## Concept-art sprite experiment — October 28, 2026
+
+The `develop` browser preview tests four directional character sprites extracted from the original Wildbound concept sheet and downsampled to 24 × 32 with transparent backgrounds. They are prototype sprites, not finished hand-cleaned walking animations.
+
+The same preview corrects the blue-roof house doorway to the tile-20 approach and adds a connecting footpath. No collision/save schema change. Please compare the new sprite at true game scale and report clipping, color/alpha issues, and visual quality before approval.
+
+Other concept-board illustration pieces (houses, foliage, water animation frames) are not tile-ready and have not been placed over gameplay.
