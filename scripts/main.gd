@@ -109,7 +109,7 @@ func _load_map() -> void:
         map_tile_size = 24
         map_width = 48
         map_height = 14
-        keeper_tile = Vector2i(22, 7)
+        keeper_tile = Vector2i(23, 8)
         spawn_tile = Vector2i(24, 7)
         player_tile = spawn_tile
         var model: RefCounted = WILLOWREST_MAP_SCRIPT.new()
@@ -137,26 +137,16 @@ func _hero_texture(facing: String, pose: int = 0) -> Texture2D:
 
 func _tile_hero_position(cell: Vector2i) -> Vector2:
     if new_environment:
-        return Vector2(cell.x * 24 - 3, cell.y * 24 - 16)
+        return Vector2(cell.x * 24 - 3, cell.y * 24 - 28)
     return Vector2(cell.x * 16 - 4, cell.y * 16 - 16)
 
 func _tile_camera_position(cell: Vector2i) -> Vector2:
     return Vector2(cell.x * map_tile_size + map_tile_size / 2, cell.y * map_tile_size + map_tile_size / 2)
 
 func _keeper_art() -> Texture2D:
-    # Reuse the approved protagonist rendering quality for a recolored village
-    # NPC until a dedicated illustrated Keeper character is approved.
-    var original: Texture2D = _hero_texture("down")
-    var img: Image = original.get_image()
-    img.convert(Image.FORMAT_RGBA8)
-    for y in range(img.get_height()):
-        for x in range(img.get_width()):
-            var c: Color = img.get_pixel(x, y)
-            if c.a < 0.5:
-                continue
-            if c.b > c.r * 1.18 and c.b > c.g * 1.12:
-                img.set_pixel(x, y, Color(c.r * 0.85, c.g * 1.24, c.b * 0.70, c.a))
-    return ImageTexture.create_from_image(img)
+    # Dedicated original Keeper Vale portrait sprite, not the protagonist
+    # recolored. Keep pixel-sharp scaling in the scene.
+    return load("res://assets/keeper_vale_v1.png") as Texture2D
 
 func _create_world() -> void:
     world_map = Sprite2D.new()
@@ -214,30 +204,29 @@ func _place_hero() -> void:
     player_sprite.position = _tile_hero_position(player_tile)
     player_sprite.texture = _hero_texture(direction)
 
-func _process(delta: float) -> void:
-    if mode != "world":
-        return
-    if is_moving:
-        return
-    step_timer -= delta
-    if step_timer > 0.0:
-        return
-    var shift: Vector2i = Vector2i.ZERO
+func _movement_input() -> Vector2i:
+    # Classic four-way movement with immediate facing changes on each new tile.
     if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
-        shift = Vector2i.UP
         direction = "up"
-    elif Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
-        shift = Vector2i.DOWN
+        return Vector2i.UP
+    if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
         direction = "down"
-    elif Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
-        shift = Vector2i.LEFT
+        return Vector2i.DOWN
+    if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
         direction = "left"
-    elif Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
-        shift = Vector2i.RIGHT
+        return Vector2i.LEFT
+    if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
         direction = "right"
+        return Vector2i.RIGHT
+    return Vector2i.ZERO
+
+func _process(_delta: float) -> void:
+    if mode != "world" or is_moving:
+        return
+    var shift: Vector2i = _movement_input()
     if shift != Vector2i.ZERO:
-        step_timer = 0.14
         _step(shift)
+
 
 func _unhandled_key_input(event: InputEvent) -> void:
     if not (event is InputEventKey):
@@ -275,10 +264,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _step(shift: Vector2i) -> void:
     var next_tile: Vector2i = player_tile + shift
-    player_sprite.texture = _hero_texture(direction)
     if next_tile.x < 1 or next_tile.y < 1 or next_tile.x >= map_width - 1 or next_tile.y >= map_height - 1:
         return
     if blocked.has(next_tile) or next_tile == keeper_tile:
+        # A blocked step is never animated. Remain visible at idle.
+        player_sprite.texture = _hero_texture(direction)
         return
     if not return_message.is_empty():
         return_message = ""
@@ -299,13 +289,17 @@ func _step(shift: Vector2i) -> void:
     movement_tween = create_tween()
     movement_tween.tween_method(
         Callable(self, "_update_movement").bind(starting_hero, target_hero, starting_camera, target_camera),
-        0.0, 1.0, 0.145
+        0.0, 1.0, 0.175
     ).set_trans(Tween.TRANS_LINEAR)
     movement_tween.finished.connect(Callable(self, "_complete_step").bind(next_tile))
 
 func _update_movement(progress: float, starting_hero: Vector2, target_hero: Vector2, starting_camera: Vector2, target_camera: Vector2) -> void:
     player_sprite.position = starting_hero.lerp(target_hero, progress).round()
     follow_camera.position = starting_camera.lerp(target_camera, progress).round()
+    # A complete stride cycles through the illustrated poses instead of
+    # holding one static pose for every 24-pixel movement.
+    var pose: int = walk_pose if progress < 0.68 else 0
+    player_sprite.texture = _hero_texture(direction, pose)
 
 func _complete_step(next_tile: Vector2i) -> void:
     player_sprite.position = _tile_hero_position(player_tile)
@@ -319,6 +313,12 @@ func _complete_step(next_tile: Vector2i) -> void:
         _start_wild_battle()
     elif not new_environment and (next_tile.x == 26 or next_tile.x == 27) and next_tile.y >= 13 and next_tile.y <= 17:
         _render_world()
+    # Keep walking continuously while a direction stays pressed, instead of
+    # inserting an idle pause between tiles. Turning still obeys the grid.
+    if mode == "world":
+        var held: Vector2i = _movement_input()
+        if held != Vector2i.ZERO:
+            _step(held)
 
 func _talk() -> void:
     if is_moving:
