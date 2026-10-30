@@ -55,6 +55,14 @@ func _test() -> void:
     if not loaded.load_save() or not loaded.evolved["spriglet"] or loaded.research["might"] != 1 or loaded.ascensions != 1:
         fail("Save/load lost permanent creature progression")
         return
+    loaded.wave = 2
+    loaded._spawn_enemy()
+    if loaded.effective_damage("spriglet") <= loaded.species_damage("spriglet"):
+        fail("Grove advantage against Tide enemy not applied")
+        return
+    # The visual-QA step should render an actual fresh-start session, not the
+    # intentionally advanced/saved fixture from this progression regression test.
+    DirAccess.remove_absolute(ProjectSettings.globalize_path(ENGINE.SAVE_FILE))
     var ui: PackedScene = load("res://scenes/incremental/wildbound_idle.tscn") as PackedScene
     if ui == null:
         fail("Reboot UI scene missing")
