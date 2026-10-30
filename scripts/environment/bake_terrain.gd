@@ -70,15 +70,16 @@ func _bake() -> void:
         return
     img.convert(Image.FORMAT_RGBA8)
     var chosen: Array[Vector2i] = []
-    chosen.append_array(_select(img,Rect2i(190,38,944,275),0,4))
+    chosen.append_array(_select(img,Rect2i(190,38,944,275),0,6))
     chosen.append_array(_select(img,Rect2i(430,90,665,150),1,4))
-    chosen.append_array(_select(img,Rect2i(5,170,190,155),2,4))
-    if chosen.size() != 12:
-        push_error("Could not locate 4 clean grass, path and water tiles; found " + str(chosen.size()))
+    chosen.append_array(_select(img,Rect2i(5,170,190,155),2,6))
+    if chosen.size() != 16:
+        push_error("Could not locate 6 grass, 4 path, 6 water candidates; found " + str(chosen.size()))
         quit(1)
         return
-    # Decoration/shore edge studies must still be replaced by polished art.
-    chosen.append_array([Vector2i(836,136),Vector2i(754,136),Vector2i(175,155),Vector2i(335,260)])
+    # Four extra clean studies fill future vegetation/shore slots without
+    # accidentally including trees, flowerbeds or bridge fragments.
+    chosen = [chosen[0],chosen[1],chosen[2],chosen[3],chosen[6],chosen[7],chosen[8],chosen[9],chosen[10],chosen[11],chosen[12],chosen[13],chosen[4],chosen[5],chosen[14],chosen[15]]
     var atlas: Image = Image.create(CELL*chosen.size(),CELL,false,Image.FORMAT_RGBA8)
     for i in range(chosen.size()):
         atlas.blit_rect(img,Rect2i(chosen[i],Vector2i(CELL,CELL)),Vector2i(i*CELL,0))
