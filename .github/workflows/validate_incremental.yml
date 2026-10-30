@@ -1,0 +1,48 @@
+name: Wildbound creature incremental reboot
+on:
+  push:
+    branches: [feature/wildbound-creature-incremental-reboot]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  godot-reboot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated reboot branch
+        uses: actions/checkout@v4
+      - name: Install Godot 4.7.2 and Web templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+      - name: Import assets and check GDScript
+        run: godot --headless --path . --editor --import --quit
+      - name: Validate progression, persistent evolution and interface
+        run: godot --headless --path . --script res://tests/check_incremental.gd
+      - name: Startup smoke test
+        run: godot --headless --path . --quit-after 10
+      - name: Capture actual rendered scene for visual review
+        run: |
+          if ! command -v Xvfb >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y xvfb; fi
+          xvfb-run -a godot --path . --script res://tests/capture_incremental.gd
+      - name: Upload actual screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-creature-ascension-visual-qa
+          path: Docs/QA/wildbound_incremental.png
+      - name: Export browser-playable game
+        run: |
+          mkdir -p /tmp/wildbound-idle-web
+          godot --headless --path . --export-release "Web" /tmp/wildbound-idle-web/index.html
+          test -s /tmp/wildbound-idle-web/index.html
+          test -s /tmp/wildbound-idle-web/index.wasm
+          test -s /tmp/wildbound-idle-web/index.pck
+      - name: Upload browser-playable build without replacing Pages
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-creature-ascension-browser-prototype
+          path: /tmp/wildbound-idle-web/
