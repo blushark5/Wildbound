@@ -99,6 +99,9 @@ jobs:
       - name: Validate v0.3 tactics, Resonance, camp and legacy-save upgrades
         run: godot --headless --path creature-reboot --script res://tests/check_v03.gd
 
+      - name: Validate v0.4 masteries, combo, caches and save migration
+        run: godot --headless --path creature-reboot --script res://tests/check_v04.gd
+
       - name: Export creature reboot to /reboot/
         run: |
           mkdir -p "$RUNNER_TEMP/wildbound-site/reboot"
