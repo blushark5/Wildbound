@@ -29,6 +29,18 @@ jobs:
         run: godot --headless --path . --script res://tests/check_modular_environment.gd
       - name: Confirm existing game starts without regressions
         run: godot --headless --path . --quit-after 5
+      - name: Attempt visual screenshot with real graphics renderer
+        continue-on-error: true
+        run: |
+          if ! command -v Xvfb >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y xvfb; fi
+          xvfb-run -a godot --path . --script res://tests/capture_modular_scene.gd
+      - name: Archive visual QA screenshot if available
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: modular-willowrest-rendered-screenshot
+          path: Docs/Art/qa/modular_scene_study.png
+          if-no-files-found: ignore
       - name: Export isolated modular study for browser testing
         run: |
           sed -i 's@run/main_scene="res://main.tscn"@run/main_scene="res://scenes/environment/willowrest_modular_test.tscn"@' project.godot
