@@ -42,7 +42,19 @@ const MILESTONE_ORDER: Array[String] = [
     "kills250","wave60","eggs12","ascend5","evolve3","wave100"
 ]
 const ABILITY_NAMES: Dictionary = {"spriglet":"Verdant Bloom","brinlet":"Tidal Surge","cindlet":"Ember Frenzy"}
+const RELICS: Dictionary = {
+    "oak":{"name":"Elderwood Charm","description":"+20% Grove damage per rank"},
+    "pearl":{"name":"Tideglass Pearl","description":"+20% Tide damage per rank"},
+    "ember":{"name":"Cinderheart Talisman","description":"+20% Ember damage per rank"},
+    "sigil":{"name":"Guardian Sigil","description":"+25% boss damage per rank"},
+    "coin":{"name":"Coinroot Amulet","description":"+12% Gold earned per rank"},
+    "hearth":{"name":"Hearthstone","description":"+18% ward capacity per rank"}
+}
+const RELIC_ORDER: Array[String] = ["oak","pearl","ember","sigil","coin","hearth"]
 
+var relic_ranks: Dictionary = {"oak":0,"pearl":0,"ember":0,"sigil":0,"coin":0,"hearth":0}
+var equipped_relics: Array[String] = []
+var relic_drops: int = 0
 var nests: int = 0
 var eggs_hatched: int = 0
 var gene: Dictionary = {"spriglet":0,"brinlet":0,"cindlet":0}
@@ -126,9 +138,12 @@ func species_damage(kind: String) -> float:
         return 0.0
     var heredity: float = pow(1.065,float(int(gene.get(kind,0))))
     var shimmer: float = 1.22 if bool(rare.get(kind,false)) else 1.0
+    var lineage_relic: Dictionary = {"spriglet":"oak","brinlet":"pearl","cindlet":"ember"}
+    var relic_key: String = String(lineage_relic[kind])
+    var relic_power: float = pow(1.20,float(int(relic_ranks[relic_key]))) if equipped_relics.has(relic_key) else 1.0
     var haste: float = pow(1.08,float(int(research.get("speed",0))))
     var frenzy: float = 1.85 if frenzy_left > 0.0 else 1.0
-    return base * heredity * shimmer * haste * frenzy
+    return base * heredity * shimmer * haste * frenzy * relic_power
 
 func attack_interval(kind: String) -> float:
     return maxf(0.15,super.attack_interval(kind)*pow(0.97,float(int(research.get("speed",0)))))
@@ -139,6 +154,8 @@ func effective_damage(kind: String) -> float:
         return 0.0
     if enemy_is_boss():
         raw *= 1.0+0.20*float(int(modules.get("pierce",0)))
+        if equipped_relics.has("sigil"):
+            raw *= pow(1.25,float(int(relic_ranks["sigil"])))
     var chance: float = minf(0.70,0.05+float(int(modules.get("crit",0)))*0.035)
     recent_critical = _rng.randf() < chance
     if recent_critical:
@@ -148,7 +165,8 @@ func effective_damage(kind: String) -> float:
     return raw
 
 func max_ward() -> float:
-    return super.max_ward() * (1.0 + float(int(research.get("incubator",0))) * 0.04)
+    var relic_ward: float = pow(1.18,float(int(relic_ranks["hearth"]))) if equipped_relics.has("hearth") else 1.0
+    return super.max_ward() * (1.0 + float(int(research.get("incubator",0))) * 0.04) * relic_ward
 
 func enemy_damage() -> float:
     return super.enemy_damage() * float(_region_data()["damage"]) * (1.65 if overclock else 1.0)
@@ -184,6 +202,11 @@ func _enemy_defeated() -> void:
     current_streak += 1
     greatest_streak = maxi(greatest_streak,current_streak)
     if was_boss:
+        # First guardian guarantees a Relic; later drops are generous.
+        if relic_drops == 0 or _rng.randf() < minf(0.80,0.35 + float(int(research.get("scavenge",0)))*0.035):
+            var relic_key: String = RELIC_ORDER[_rng.randi_range(0,RELIC_ORDER.size()-1)]
+            relic_ranks[relic_key] = int(relic_ranks[relic_key])+1
+            relic_drops += 1
         last_boss_wave = maxi(last_boss_wave,defeated_wave)
         nests += 3 + int(research.get("scavenge",0))
         ward = minf(max_ward(),ward+max_ward()*0.12)
@@ -274,6 +297,21 @@ func use_ability(kind: String) -> bool:
     else:
         frenzy_left = 12.0
         _report("%s! Pack damage increases for 12 seconds." % ABILITY_NAMES[kind])
+    return true
+
+func equip_relic(key: String) -> bool:
+    if not RELICS.has(key) or int(relic_ranks.get(key,0)) < 1:
+        return false
+    if equipped_relics.has(key):
+        equipped_relics.erase(key)
+        _report("%s unequipped." % String(RELICS[key]["name"]))
+        return true
+    if equipped_relics.size() >= 2:
+        _report("Relic slots are full. Unequip one first.")
+        return false
+    equipped_relics.append(key)
+    ward = minf(max_ward(),ward)
+    _report("%s equipped! Its permanent bonus is active." % String(RELICS[key]["name"]))
     return true
 
 func hatch_cost() -> int:
@@ -399,6 +437,9 @@ func format_number(value: float) -> String:
 func to_dict() -> Dictionary:
     var result: Dictionary = super.to_dict()
     result["alpha_save_version"] = 2
+    result["relic_ranks"] = relic_ranks.duplicate(true)
+    result["equipped_relics"] = equipped_relics.duplicate()
+    result["relic_drops"] = relic_drops
     result["nests"] = nests
     result["eggs_hatched"] = eggs_hatched
     result["gene"] = gene.duplicate(true)
@@ -437,6 +478,16 @@ func load_save() -> bool:
         modules[extra] = maxi(0,int(persisted_modules.get(extra,0)))
     for extra in EXTRA_RESEARCH:
         research[extra] = maxi(0,int(persisted_research.get(extra,0)))
+    var saved_relics: Dictionary = data.get("relic_ranks",{})
+    for relic in RELIC_ORDER:
+        relic_ranks[relic] = maxi(0,int(saved_relics.get(relic,0)))
+    var loadout: Array = data.get("equipped_relics",[])
+    equipped_relics.clear()
+    for entry in loadout:
+        var relic_key: String = String(entry)
+        if RELICS.has(relic_key) and int(relic_ranks[relic_key]) > 0 and not equipped_relics.has(relic_key) and equipped_relics.size() < 2:
+            equipped_relics.append(relic_key)
+    relic_drops = maxi(0,int(data.get("relic_drops",0)))
     nests = maxi(0,int(data.get("nests",0)))
     eggs_hatched = maxi(0,int(data.get("eggs_hatched",0)))
     rare_pity = clampi(int(data.get("rare_pity",0)),0,9)
