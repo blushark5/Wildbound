@@ -2,6 +2,7 @@ extends Control
 ## WILDBOUND — Creature Ascension Alpha
 ## One-screen arena with deep tabbed builds/collection/research/map/milestones.
 const ENGINE = preload("res://scripts/incremental/alpha_engine.gd")
+const AUDIO = preload("res://scripts/audio.gd")
 const BG := Color("#0c1724")
 const CARD := Color("#172b3c")
 const CARD_ALT := Color("#1b3744")
@@ -34,13 +35,21 @@ var tab_scroll: ScrollContainer
 var right_rows: Array[Dictionary] = []
 var tab_buttons: Dictionary = {}
 var damage_text: Label
+var audio: Node
+var help_dialog: AcceptDialog
+var ascend_dialog: ConfirmationDialog
 
 func _ready() -> void:
     game = ENGINE.new()
     game.initialize_alpha()
     game.load_save()
     game.notice.connect(_on_notice)
+    audio = AUDIO.new()
+    add_child(audio)
+    audio.set("muted",true) # Audio opt-in, compatible with browser gesture rules.
     _layout()
+    _build_help_dialog()
+    _build_ascend_dialog()
     _switch_tab("FORGE")
     _refresh()
 
@@ -174,7 +183,9 @@ func _layout() -> void:
     _panel(self,"Header",Rect2(12,10,1256,65),CARD_ALT)
     _label(self,"Logo","WILDBOUND",Rect2(29,17,270,38),31,JADE)
     _label(self,"Sublogo","CREATURE ASCENSION  •  ALPHA",Rect2(31,51,280,15),11,DULL)
-    _label(self,"Resources","",Rect2(380,18,867,44),20,GOLD)
+    _label(self,"Resources","",Rect2(380,18,700,44),20,GOLD)
+    _button(self,"Guide","GUIDE",Rect2(1090,25,78,34),_show_help,Color("#3e5c77"))
+    _button(self,"Sound","SOUND OFF",Rect2(1176,25,76,34),_toggle_audio,Color("#3e5c77"))
 
     _panel(self,"PackPane",Rect2(12,86,318,565))
     _label(self,"PackTitle","YOUR WILDBOUND PACK",Rect2(28,101,282,29),20,JADE)
@@ -298,6 +309,9 @@ func _switch_tab(next: String) -> void:
                 row["key"] = kind
                 right_rows.append(row)
         "LEGACY":
+            var prestige: Dictionary = _new_card("ASCEND THE WILDS","", "Ascend",_request_ascend,124)
+            prestige["mode"] = "ascend"
+            right_rows.append(prestige)
             for kind in ["might","heart"] + ENGINE.EXTRA_RESEARCH:
                 var card: Dictionary = _new_card(ENGINE.RESEARCH_NAMES[kind],"", "Research",_purchase_research.bind(kind))
                 card["mode"] = "research"
@@ -382,6 +396,7 @@ func _refresh() -> void:
     buttons["Batch"].text = "BUY x%d" % batch
     buttons["Speed"].text = "%sx SPEED" % str(int(game.game_speed))
     buttons["Save"].text = "SAVE %s" % ("PAUSED" if not running else "NOW")
+    buttons["Sound"].text = "SOUND OFF" if bool(audio.get("muted")) else "SOUND ON"
     _refresh_right()
 
 func _refresh_right() -> void:
@@ -393,6 +408,12 @@ func _refresh_right() -> void:
         var mode: String = String(row["mode"])
         var key: String = String(row.get("key",""))
         match mode:
+            "ascend":
+                var earned: int = game.available_echoes()
+                info.text = "Unlock at wave 20. Reset Gold, levels and field modules.
+Keep companions, evolution, genes, bonds, regions and research."
+                action.text = "ASCEND  •  +%d ECHOES" % earned
+                action.disabled = earned < 1
             "module":
                 var rank: int = int(game.modules[key])
                 var cost: float = game.module_cost(key)
@@ -460,19 +481,84 @@ func _refresh_right() -> void:
                     "CLAIM +%d Echoes / +%d Shards" % [int(data["echoes"]),int(data["shards"])])
                 action.disabled = claimed or progress < target
 
+func _build_help_dialog() -> void:
+    help_dialog = AcceptDialog.new()
+    help_dialog.title = "WILDBOUND • Field Guide"
+    help_dialog.dialog_text = (
+        "WELCOME TO THE WILDS\n"
+        + "Your creatures battle automatically. Click STRIKE or press Space to help.\n\n"
+        + "1. PACK: Spend Gold to recruit and level Spriglet, Brinlet and Cindlet.\n"
+        + "2. ABILITIES: Click each creature's ability when ready. Bloom heals,\n"
+        + "   Surge bursts enemies, and Frenzy empowers your whole pack.\n"
+        + "3. FORGE: Build your run with damage, defense, speed, criticals,\n"
+        + "   Gold, healing and guardian-breaking upgrades.\n"
+        + "4. NEST: Guardians drop Nest Shards. Hatch eggs for recruits,\n"
+        + "   permanent genes and rare Shimmer creatures.\n"
+        + "5. EVOLVE: Level 15 plus 25 bond victories unlocks a new form.\n"
+        + "6. LEGACY: Ascend from wave 20 onward for permanent Echoes.\n"
+        + "   Creature ownership, evolution, genes, bonds and research persist.\n"
+        + "7. AUTOMATE: Legacy research unlocks auto-buy and auto-skills.\n"
+        + "8. MAP: Discover harder regions or enable Overclock for more Gold.\n"
+        + "9. GOALS: Claim milestones for Echoes and Nest Shards.\n\n"
+        + "Grove beats Tide, Tide beats Ember, Ember beats Grove.\n"
+        + "Progress autosaves every 20 seconds in this browser. Offline Gold\n"
+        + "is capped at 4 hours, with no simulated waves or premium rewards.\n"
+        + "Everything is earn-only; there are no paid eggs or purchases."
+    )
+    help_dialog.ok_button_text = "BACK TO THE WILDS"
+    add_child(help_dialog)
+
+func _show_help() -> void:
+    help_dialog.popup_centered(Vector2i(720,560))
+
+func _build_ascend_dialog() -> void:
+    ascend_dialog = ConfirmationDialog.new()
+    ascend_dialog.title = "Begin an Ascension?"
+    ascend_dialog.confirmed.connect(_confirm_ascend)
+    add_child(ascend_dialog)
+
+func _request_ascend() -> void:
+    if game.available_echoes() < 1:
+        return
+    ascend_dialog.dialog_text = (
+        "Earn %d Echoes and restart your expedition at wave 1.\n\n"
+        + "Gold, creature levels and temporary modules reset.\n"
+        + "Creature ownership, evolutions, genes, bonds and research persist.\n\n"
+        + "Are you ready to Ascend?") % game.available_echoes()
+    ascend_dialog.popup_centered(Vector2i(520,280))
+
+func _confirm_ascend() -> void:
+    game.save()
+    if game.ascend():
+        audio.call("play_fx","victory")
+        game.save()
+        _switch_tab("LEGACY")
+    _refresh()
+
+func _toggle_audio() -> void:
+    var was_muted: bool = bool(audio.get("muted"))
+    audio.call("toggle_mute")
+    if was_muted:
+        audio.call("play_track","battle")
+        audio.call("play_fx","confirm")
+    _refresh()
+
 func _buy_creature(kind: String) -> void:
     var owned: bool = int(game.levels[kind]) > 0
     if game.buy_levels(kind,batch if owned else 1):
+        audio.call("play_fx","confirm")
         game.last_notice = "%s strengthened! Total pack DPS %s." % [
             game.species_name(kind),game.format_number(game.total_dps())]
     _refresh()
 
 func _ability(kind: String) -> void:
     if game.use_ability(kind):
+        audio.call("play_fx","confirm")
         _refresh()
 
 func _purchase_module(kind: String) -> void:
     if game.buy_module(kind):
+        audio.call("play_fx","confirm")
         game.last_notice = "%s upgraded to rank %d." % [ENGINE.MODULE_NAMES[kind],int(game.modules[kind])]
     _refresh()
 
@@ -483,6 +569,7 @@ func _purchase_research(kind: String) -> void:
 
 func _hatch() -> void:
     if game.hatch_egg() != "":
+        audio.call("play_fx","capture")
         game.save()
     _refresh()
 
@@ -548,6 +635,13 @@ func _save() -> void:
         game.last_notice = "Adventure safely saved in this browser."
     _refresh()
 
-func _on_notice(_message: String) -> void:
+func _on_notice(message: String) -> void:
+    if audio != null and not bool(audio.get("muted")):
+        if message.contains("evolved"):
+            audio.call("play_fx","evolve")
+        elif message.contains("Guardian cleared"):
+            audio.call("play_fx","victory")
+        elif message.contains("retreated"):
+            audio.call("play_fx","break")
     if is_node_ready() and labels.has("Notice"):
         _refresh()
