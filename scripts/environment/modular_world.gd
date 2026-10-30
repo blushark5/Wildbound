@@ -75,10 +75,12 @@ func build() -> void:
     var ripple := ShaderMaterial.new()
     ripple.shader = load("res://scripts/environment/water_shimmer.gdshader") as Shader
     water.material = ripple
-    objects = Node2D.new()
-    objects.name = "WorldObjects"
+    objects = get_node_or_null("WorldObjects") as Node2D
+    if objects == null:
+        objects = Node2D.new()
+        objects.name = "WorldObjects"
+        add_child(objects)
     objects.y_sort_enabled = true
-    add_child(objects)
     # Grass and a few art variations. All placement is editable as tile cells.
     for y in range(HEIGHT):
         for x in range(WIDTH):
