@@ -778,9 +778,9 @@ func _build_options_dialog() -> void:
     toggle.name = "ReduceMotion"
     toggle.text = "Reduce animations and hit flashes"
     toggle.set_pressed_no_signal(motion_reduced)
+    toggle.position = Vector2(18,145)
     toggle.toggled.connect(_toggle_reduced_motion)
     options_dialog.add_child(toggle)
-    options_dialog.add_child.call_deferred(toggle)
     add_child(options_dialog)
 
 func _show_options() -> void:
