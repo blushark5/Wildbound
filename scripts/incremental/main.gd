@@ -13,8 +13,8 @@ var labels: Dictionary = {}
 var buttons: Dictionary = {}
 var portraits: Dictionary = {}
 var enemy_portrait: TextureRect
-var enemy_bar: ProgressBar
-var ward_bar: ProgressBar
+var enemy_bar: ColorRect
+var ward_bar: ColorRect
 var running: bool = true
 var buy_batch: int = 1
 var ui_clock: float = 0.0
@@ -110,21 +110,22 @@ func _load_portrait(picture: TextureRect, kind: String) -> void:
     var path: String = "res://assets/%s%s_front.png" % [kind,extra]
     picture.texture = load(path) as Texture2D
 
-func _make_bar(at: Rect2, tint: Color) -> ProgressBar:
-    var bar := ProgressBar.new()
-    bar.position = at.position
-    bar.size = at.size
-    bar.show_percentage = false
-    var backdrop := StyleBoxFlat.new()
-    backdrop.bg_color = Color("#091623")
-    backdrop.set_corner_radius_all(4)
-    bar.add_theme_stylebox_override("background",backdrop)
-    var fill := StyleBoxFlat.new()
-    fill.bg_color = tint
-    fill.set_corner_radius_all(4)
-    bar.add_theme_stylebox_override("fill",fill)
-    add_child(bar)
-    return bar
+func _make_bar(at: Rect2, tint: Color) -> ColorRect:
+    # Pixel-exact colors prevent minimum-height ProgressBar theming from
+    # obscuring the main tap button at small logical game resolutions.
+    var background := ColorRect.new()
+    background.position = at.position
+    background.size = at.size
+    background.color = Color("#091623")
+    background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    add_child(background)
+    var fill := ColorRect.new()
+    fill.position = at.position
+    fill.size = at.size
+    fill.color = tint
+    fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    add_child(fill)
+    return fill
 
 func _build_interface() -> void:
     var background := ColorRect.new()
@@ -160,7 +161,7 @@ func _build_interface() -> void:
     _make_label("ward_value","",Rect2(511,360,130,22),13,PAPER)
     ward_bar = _make_bar(Rect2(330,388,306,15),MINT)
     _make_label("battle_dps","",Rect2(329,414,311,21),15,GOLD)
-    _make_label("hint","Tap to help your team. Creatures attack automatically.",Rect2(327,443,316,25),11,MUTED)
+    _make_label("hint","Grove > Tide > Ember > Grove. Tap to assist.",Rect2(327,443,316,25),11,MUTED)
 
     _make_panel(Rect2(666,84,282,391))
     _make_label("module_title","FIELD UPGRADES",Rect2(682,96,246,28),20,MINT)
@@ -207,15 +208,15 @@ func _refresh() -> void:
         buttons["buy_"+kind].disabled = game.gold < cost
         _load_portrait(portraits[kind],kind)
         portraits[kind].modulate = Color.WHITE if level > 0 else Color(0.35,0.4,0.5,0.7)
-    labels["arena_sub"].text = "Wave %d  •  %s" % [game.wave,"BOSS ENCOUNTER" if game.enemy_is_boss() else "Wild Encounter"]
+    labels["arena_sub"].text = "Wave %d  •  %s  •  %s" % [game.wave,"BOSS" if game.enemy_is_boss() else "WILD",str(ENGINE.SPECIES[game.enemy_species]["element"])]
     var enemy_path: String = "res://assets/%s_front.png" % game.enemy_species
     if game.enemy_is_boss():
         enemy_path = "res://assets/%s_evo_front.png" % game.enemy_species
     enemy_portrait.texture = load(enemy_path) as Texture2D
     labels["enemy_hp"].text = "Enemy HP  %s / %s" % [_fmt(maxf(0.0,game.enemy_hp)),_fmt(game.enemy_max_hp)]
-    enemy_bar.value = clampf(game.enemy_hp/maxf(1.0,game.enemy_max_hp)*100.0,0.0,100.0)
+    enemy_bar.size.x = 234.0*clampf(game.enemy_hp/maxf(1.0,game.enemy_max_hp),0.0,1.0)
     labels["ward_value"].text = "%s / %s" % [_fmt(game.ward),_fmt(game.max_ward())]
-    ward_bar.value = clampf(game.ward/maxf(1.0,game.max_ward())*100.0,0.0,100.0)
+    ward_bar.size.x = 306.0*clampf(game.ward/maxf(1.0,game.max_ward()),0.0,1.0)
     labels["battle_dps"].text = "Pack DPS: %s    |    Manual hit: %s" % [_fmt(game.total_dps()),_fmt(maxf(2.0,game.total_dps()*0.53))]
     for kind in ENGINE.MODULES:
         var rank: int = int(game.modules[kind])
