@@ -203,7 +203,7 @@ func _refresh() -> void:
         var level: int = int(game.levels[kind])
         labels[kind+"_name"].text = game.species_name(kind) if level > 0 else str(ENGINE.SPECIES[kind]["name"])+"  • Locked"
         labels[kind+"_info"].text = ("Lv %d | %s\nBond %d / 25" % [level,str(ENGINE.SPECIES[kind]["element"]),int(game.bonds[kind])]) if level > 0 else "Recruit your next creature"
-        var cost: float = game.purchase_cost(kind,buy_batch)
+        var cost: float = game.purchase_cost(kind,buy_batch if level > 0 else 1)
         buttons["buy_"+kind].text = ("%s  %s Gold" % [("Level +" + str(buy_batch)) if level > 0 else "Recruit",_fmt(cost)])
         buttons["buy_"+kind].disabled = game.gold < cost
         _load_portrait(portraits[kind],kind)
