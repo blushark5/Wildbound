@@ -10,7 +10,7 @@ var visual: Sprite2D
 var art: RefCounted
 
 func _ready() -> void:
-    world = get_parent().get_node("World")
+    world = get_parent().get_parent()
     art = ART.new()
     visual = Sprite2D.new()
     visual.name = "ApprovedHero"
