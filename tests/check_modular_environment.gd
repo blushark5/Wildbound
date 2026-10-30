@@ -23,10 +23,18 @@ func _validate() -> void:
     if ground.get_used_cells().size() != 672 or road.get_used_cells().size() < 100 or lake.get_used_cells().size() != 40:
         _fail("Terrain tile coverage incorrect")
         return
-    if trees.get_child_count() < 8 or trees.get_child(0).get_node_or_null("TrunkCollision") == null:
-        _fail("Independent illustrated trees with trunk collisions missing")
+    var tree_count: int = 0
+    for item in trees.get_children():
+        if not item.name.begins_with("Tree_"):
+            continue
+        tree_count += 1
+        if item.get_node_or_null("TrunkCollision") == null:
+            _fail("Tree instance is missing trunk-only collision")
+            return
+    if tree_count < 8:
+        _fail("Independent illustrated trees missing")
         return
-    var hero: Node2D = scene.get_node("Player")
+    var hero: Node2D = scene.get_node("World/WorldObjects/Player")
     if hero.get_node("ApprovedHero").texture == null:
         _fail("Approved hero art missing")
         return
@@ -59,5 +67,5 @@ func _validate() -> void:
     if not reached:
         _fail("Meadow disconnected from player")
         return
-    print("PASS: 4 tile layers, %d separate trees, water physics, %d traversable cells, original hero" % [trees.get_child_count(),visited.size()])
+    print("PASS: 4 tile layers, %d separate trees, water physics, %d traversable cells, original hero" % [tree_count,visited.size()])
     quit(0)
