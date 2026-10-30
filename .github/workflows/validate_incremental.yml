@@ -23,12 +23,21 @@ jobs:
         run: godot --headless --path . --editor --import --quit
       - name: Validate progression, persistent evolution and interface
         run: godot --headless --path . --script res://tests/check_incremental.gd
+      - name: Validate full alpha engine, migration and interface
+        run: godot --headless --path . --script res://tests/check_alpha.gd
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
       - name: Capture actual rendered scene for visual review
         run: |
           if ! command -v Xvfb >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y xvfb; fi
           xvfb-run -a godot --path . --script res://tests/capture_incremental.gd
+      - name: Render real Alpha screenshot
+        run: xvfb-run -a godot --path . --script res://tests/capture_alpha.gd
+      - name: Archive Alpha screenshot for visual review
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-alpha-rendered-qa
+          path: Docs/QA/wildbound_alpha.png
       - name: Upload actual screenshot
         uses: actions/upload-artifact@v4
         with:
