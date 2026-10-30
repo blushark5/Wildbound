@@ -85,6 +85,13 @@ func _test() -> void:
         return
     g.auto_buy = true
     g.auto_skills = true
+    var before_autobuy: int = int(g.levels["spriglet"])
+    g.gold = 100000.0
+    for i in range(6):
+        g.tick(0.20)
+    if int(g.levels["spriglet"]) <= before_autobuy and int(g.modules["power"]) == 0:
+        _die("Auto-buy did not spend Gold once its research was unlocked")
+        return
     g.gene["spriglet"] = 5
     g.rare["spriglet"] = true
     g.game_speed = 2.0
@@ -114,6 +121,7 @@ func _test() -> void:
         "total_seconds","game_speed"]:
         old_format.erase(key)
     var old_file: FileAccess = FileAccess.open(ALPHA.SAVE_FILE,FileAccess.WRITE)
+    old_format["saved_at"] = Time.get_unix_time_from_system() - 3600
     old_file.store_string(JSON.stringify(old_format))
     old_file.close()
     var migrated = ALPHA.new()
@@ -121,6 +129,9 @@ func _test() -> void:
     if not migrated.load_save() or not migrated.evolved["spriglet"] or \
         migrated.gene["spriglet"] != 0 or migrated.region != "meadow":
         _die("Legacy v0.1 save migration failed")
+        return
+    if migrated.offline_gold <= 0.0 or migrated.offline_gold > 1.0e18 or migrated.wave != 1:
+        _die("Offline Gold must not advance waves or award unlimited currency")
         return
     DirAccess.remove_absolute(ProjectSettings.globalize_path(ALPHA.SAVE_FILE))
     var ui: PackedScene = load("res://scenes/incremental/wildbound_alpha.tscn") as PackedScene
@@ -133,6 +144,11 @@ func _test() -> void:
         instance.get_node_or_null("tab_NEST") == null or \
         instance.get_node_or_null("AutoBuy") == null:
         _die("Critical game buttons missing")
+        return
+    var previous_enemy_hp: float = float(instance.game.enemy_hp)
+    instance.get_node("Tap").emit_signal("pressed")
+    if instance.game.enemy_hp >= previous_enemy_hp and instance.game.wave == 1:
+        _die("Visible attack button does not affect live gameplay")
         return
     instance.call("_switch_tab","LEGACY")
     var has_ascend: bool = false
