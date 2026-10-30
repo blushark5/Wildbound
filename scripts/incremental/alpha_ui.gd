@@ -426,9 +426,19 @@ func _switch_tab(next: String) -> void:
 func _refresh() -> void:
     if game == null:
         return
-    labels["Resources"].text = "Gold %s     Echoes %d     Nest Shards %d     Ascensions %d" % [
+    labels["Resources"].text = "Gold %s    Echo %d    Shards %d    Asc %d" % [
         game.format_number(game.gold),game.echoes,game.nests,game.ascensions]
     labels["RegionTitle"].text = String(ENGINE.REGIONS[game.region]["name"]).to_upper()
+    if game.wave <= 5 and int(game.levels["brinlet"]) == 0:
+        labels["PackHint"].text = "START HERE • Level Spriglet, then recruit Brinlet"
+    elif game.caches_pending > 0:
+        labels["PackHint"].text = "NEW REWARD • Claim a Wild Cache in GOALS"
+    elif game.wave >= 20 and game.available_echoes() > 0:
+        labels["PackHint"].text = "PRESTIGE READY • Open LEGACY to Ascend"
+    elif game.can_specialize("spriglet") and game.specialization["spriglet"] == "":
+        labels["PackHint"].text = "MASTERY READY • Choose a trait in PACK"
+    else:
+        labels["PackHint"].text = "Level • Evolve • Choose masteries • Ascend"
     var status: String = game.enemy_mutator()
     labels["WaveTitle"].text = "WAVE %d  •  %s  •  Best %d" % [
         game.wave,status.to_upper() if status != "" else "WILD",game.best_wave]
@@ -449,6 +459,7 @@ func _refresh() -> void:
     fury_label.text = ("FURY • %ds" % maxi(0,18-ceili(game.guardian_seconds))) if game.enemy_is_boss() and not game.guardian_enraged else ("FURY ACTIVE!" if game.enemy_is_boss() else "")
     var visual_bounce: float = 0.0 if motion_reduced else sin(visual_time*2.3)*3.0
     enemy_portrait.position.y = 199.0 + visual_bounce
+    enemy_portrait.position.x = 505.0 + (sin(visual_time*57.0)*3.0 if game.damage_flash > 0.0 and not motion_reduced else 0.0)
     enemy_portrait.modulate = Color("#ffddbb") if game.damage_flash > 0.0 and not motion_reduced else Color.WHITE
     combo_label.text = ("COMBO x%d" % game.combo_hits) if game.combo_hits >= 2 else ""
     damage_text.text = "%s  %s" % ["CRITICAL" if game.recent_critical else "HIT",
@@ -507,6 +518,7 @@ func _refresh() -> void:
             "Level +"+str(batch) if owned else "Recruit",
             game.format_number(price)])
         buttons["buy_"+kind].disabled = game.gold < price
+        buttons["buy_"+kind].tooltip_text = "Earned Gold upgrades this creature; form and bond mastery persist across Ascension."
         var available: float = float(game.ability_clock[kind])
         ally_skills[kind].text = "%s  %s" % [
             String(ENGINE.ABILITY_NAMES[kind]),
