@@ -35,11 +35,13 @@ const MILESTONES: Dictionary = {
     "ascend1":{"title":"Circle Renewed","desc":"Ascend once","type":"ascend","goal":1,"echoes":1,"shards":2},
     "ascend5":{"title":"Eternal Wilds","desc":"Ascend 5 times","type":"ascend","goal":5,"echoes":6,"shards":10},
     "evolve1":{"title":"True Potential","desc":"Evolve 1 creature","type":"evolve","goal":1,"echoes":2,"shards":3},
+    "relic1":{"title":"The First Relic","desc":"Find 1 Relic","type":"relic","goal":1,"echoes":1,"shards":2},
+    "relic5":{"title":"Relic Hunter","desc":"Find 5 Relics","type":"relic","goal":5,"echoes":3,"shards":5},
     "evolve3":{"title":"Perfect Pack","desc":"Evolve all 3 creatures","type":"evolve","goal":3,"echoes":5,"shards":8}
 }
 const MILESTONE_ORDER: Array[String] = [
-    "wave10","kills50","evolve1","ascend1","eggs3","wave30",
-    "kills250","wave60","eggs12","ascend5","evolve3","wave100"
+    "wave10","relic1","kills50","evolve1","ascend1","eggs3","wave30",
+    "kills250","wave60","eggs12","relic5","ascend5","evolve3","wave100"
 ]
 const ABILITY_NAMES: Dictionary = {"spriglet":"Verdant Bloom","brinlet":"Tidal Surge","cindlet":"Ember Frenzy"}
 const RELICS: Dictionary = {
@@ -172,7 +174,8 @@ func enemy_damage() -> float:
     return super.enemy_damage() * float(_region_data()["damage"]) * (1.65 if overclock else 1.0)
 
 func wave_reward() -> float:
-    return super.wave_reward() * float(_region_data()["gold"]) \
+    var relic_gold: float = pow(1.12,float(int(relic_ranks["coin"]))) if equipped_relics.has("coin") else 1.0
+    return super.wave_reward() * float(_region_data()["gold"]) * relic_gold \
         * (2.4 if overclock else 1.0) \
         * pow(1.15,float(int(modules.get("bounty",0)))) \
         * pow(1.12,float(int(research.get("bounty",0))))
@@ -394,6 +397,8 @@ func milestone_progress(key: String) -> int:
             return kills
         "eggs":
             return eggs_hatched
+        "relic":
+            return relic_drops
         "ascend":
             return ascensions
         "evolve":
