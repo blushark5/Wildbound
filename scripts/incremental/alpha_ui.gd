@@ -13,7 +13,7 @@ const JADE := Color("#91e1b8")
 const DULL := Color("#a9bccb")
 const LILAC := Color("#c8abe8")
 const CORAL := Color("#edaa91")
-const TABS: Array[String] = ["FORGE","NEST","LEGACY","MAP","GOALS"]
+const TABS: Array[String] = ["FORGE","NEST","RELICS","LEGACY","MAP","GOALS"]
 
 var game
 var running: bool = true
@@ -222,8 +222,8 @@ func _layout() -> void:
     _label(self,"UpgradesTitle","THE SANCTUARY",Rect2(896,101,354,28),20,JADE)
     for i in range(TABS.size()):
         var current_tab: String = TABS[i]
-        var tx: float = 893.0 + float(i)*73.0
-        var b: Button = _button(self,"tab_"+current_tab,current_tab,Rect2(tx,134,70,31),_switch_tab.bind(current_tab),Color("#395874"))
+        var tx: float = 893.0 + float(i)*59.0
+        var b: Button = _button(self,"tab_"+current_tab,current_tab,Rect2(tx,134,56,31),_switch_tab.bind(current_tab),Color("#395874"))
         b.add_theme_font_size_override("font_size",11)
         tab_buttons[current_tab] = b
     tab_scroll = ScrollContainer.new()
@@ -308,6 +308,15 @@ func _switch_tab(next: String) -> void:
                 row["mode"] = "lineage"
                 row["key"] = kind
                 right_rows.append(row)
+        "RELICS":
+            var vault: Dictionary = _new_card("RELIC VAULT","Guardian kills yield permanent relics. You may equip any two. Duplicates upgrade their bonuses.","VIEW FIELD GUIDE",_show_help,118)
+            vault["mode"] = "vault"
+            right_rows.append(vault)
+            for relic in ENGINE.RELIC_ORDER:
+                var item: Dictionary = _new_card(String(ENGINE.RELICS[relic]["name"]),"","Equip",_equip_relic.bind(relic))
+                item["mode"] = "relic"
+                item["key"] = relic
+                right_rows.append(item)
         "LEGACY":
             var prestige: Dictionary = _new_card("ASCEND THE WILDS","", "Ascend",_request_ascend,124)
             prestige["mode"] = "ascend"
@@ -408,6 +417,18 @@ func _refresh_right() -> void:
         var mode: String = String(row["mode"])
         var key: String = String(row.get("key",""))
         match mode:
+            "vault":
+                info.text = "Relic drops: %d • Equipped: %d / 2
+They persist through Ascension and grow with duplicates." % [game.relic_drops,game.equipped_relics.size()]
+                action.text = "READ GEAR RULES"
+                action.disabled = false
+            "relic":
+                var rank: int = int(game.relic_ranks[key])
+                var owned: bool = rank > 0
+                var equipped: bool = game.equipped_relics.has(key)
+                info.text = "Rank %d • %s" % [rank,String(ENGINE.RELICS[key]["description"])]
+                action.text = "UNEQUIP" if equipped else ("EQUIP RELIC" if owned else "UNDISCOVERED")
+                action.disabled = not owned or (not equipped and game.equipped_relics.size() >= 2)
             "ascend":
                 var earned: int = game.available_echoes()
                 info.text = "Unlock at wave 20. Reset Gold, levels and field modules.
@@ -495,6 +516,7 @@ func _build_help_dialog() -> void:
         + "4. NEST: Guardians drop Nest Shards. Hatch eggs for recruits,\n"
         + "   permanent genes and rare Shimmer creatures.\n"
         + "5. EVOLVE: Level 15 plus 25 bond victories unlocks a new form.\n"
+        + "   RELICS: Guardian drops grant gear. Equip 2 permanent relics.\n"
         + "6. LEGACY: Ascend from wave 20 onward for permanent Echoes.\n"
         + "   Creature ownership, evolution, genes, bonds and research persist.\n"
         + "7. AUTOMATE: Legacy research unlocks auto-buy and auto-skills.\n"
@@ -541,6 +563,12 @@ func _toggle_audio() -> void:
     if was_muted:
         audio.call("play_track","battle")
         audio.call("play_fx","confirm")
+    _refresh()
+
+func _equip_relic(key: String) -> void:
+    if game.equip_relic(key):
+        audio.call("play_fx","confirm")
+        game.save()
     _refresh()
 
 func _buy_creature(kind: String) -> void:
