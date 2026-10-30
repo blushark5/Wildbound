@@ -1,7 +1,7 @@
 extends Control
 ## WILDBOUND — Creature Ascension Alpha
 ## One-screen arena with deep tabbed builds/collection/research/map/milestones.
-const ENGINE = preload("res://scripts/incremental/alpha_engine.gd")
+const ENGINE = preload("res://scripts/incremental/v03_engine.gd")
 const AUDIO = preload("res://scripts/audio.gd")
 const BG := Color("#0c1724")
 const CARD := Color("#172b3c")
@@ -35,6 +35,12 @@ var tab_scroll: ScrollContainer
 var right_rows: Array[Dictionary] = []
 var tab_buttons: Dictionary = {}
 var damage_text: Label
+var arena_art: TextureRect
+var focus_buttons: Dictionary = {}
+var resonance_fill: ColorRect
+var resonance_button: Button
+var _last_art_path: String = ""
+var _last_visual_wave: int = -1
 var audio: Node
 var help_dialog: AcceptDialog
 var ascend_dialog: ConfirmationDialog
@@ -182,7 +188,7 @@ func _layout() -> void:
 
     _panel(self,"Header",Rect2(12,10,1256,65),CARD_ALT)
     _label(self,"Logo","WILDBOUND",Rect2(29,17,270,38),31,JADE)
-    _label(self,"Sublogo","CREATURE ASCENSION  •  ALPHA",Rect2(31,51,280,15),11,DULL)
+    _label(self,"Sublogo","CREATURE ASCENSION  •  ALPHA 0.3",Rect2(31,51,280,15),11,DULL)
     _label(self,"Resources","",Rect2(380,18,700,44),20,GOLD)
     _button(self,"Guide","GUIDE",Rect2(1090,25,78,34),_show_help,Color("#3e5c77"))
     _button(self,"Sound","SOUND OFF",Rect2(1176,25,76,34),_toggle_audio,Color("#3e5c77"))
@@ -201,12 +207,35 @@ func _layout() -> void:
         _button(self,"buy_"+kind,"",Rect2(126,y+77,177,28),_buy_creature.bind(kind))
         ally_skills[kind] = _button(self,"skill_"+kind,"",Rect2(37,y+105,267,23),_ability.bind(kind),Color("#425b84"))
         ally_skills[kind].add_theme_font_size_override("font_size",12)
-    _label(self,"PackFooter","",Rect2(30,574,280,59),13,MINT_COLOR())
+    _label(self,"PackFooter","TACTICAL FORMATION",Rect2(30,568,280,20),13,JADE)
+    for i in range(ENGINE.STANCES.size()):
+        var stance_name: String = ENGINE.STANCES[i]
+        var stance_button: Button = _button(self,"stance_"+stance_name,stance_name.to_upper(),
+            Rect2(29+72*i,592,68,30),_set_stance.bind(stance_name),Color("#3b6370"))
+        stance_button.add_theme_font_size_override("font_size",10)
+        focus_buttons[stance_name] = stance_button
+    _label(self,"TacticsNote","",Rect2(29,626,285,18),10,DULL)
 
     arena_panel = _panel(self,"ArenaPane",Rect2(340,86,528,565),Color("#19383c"))
     _label(self,"RegionTitle","",Rect2(362,101,482,28),22,JADE)
     _label(self,"WaveTitle","",Rect2(362,134,480,24),17,GOLD)
     _panel(self,"EnemyArena",Rect2(364,169,480,281),Color("#244b4a"))
+    arena_art = TextureRect.new()
+    arena_art.name = "ArenaIllustration"
+    arena_art.position = Vector2(367,172)
+    arena_art.size = Vector2(474,274)
+    arena_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    arena_art.stretch_mode = TextureRect.STRETCH_SCALE
+    arena_art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    arena_art.modulate = Color(0.63,0.72,0.75,0.62)
+    arena_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    add_child(arena_art)
+    var arena_gradient: ColorRect = ColorRect.new()
+    arena_gradient.color = Color(0.03,0.08,0.13,0.24)
+    arena_gradient.position = Vector2(367,172)
+    arena_gradient.size = Vector2(474,274)
+    arena_gradient.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    add_child(arena_gradient)
     _label(self,"EnemyName","",Rect2(385,183,410,28),19,INK)
     enemy_portrait = _image(self,"brinlet",Rect2(505,201,209,160))
     damage_text = _label(self,"DamageText","",Rect2(382,363,443,22),14,CORAL)
@@ -216,7 +245,10 @@ func _layout() -> void:
     _label(self,"WardText","",Rect2(363,510,480,23),15,INK)
     ward_fill = _bar(self,"WardBar",Rect2(362,537,480,18),JADE)
     _label(self,"DpsText","",Rect2(363,570,475,23),15,GOLD)
-    _label(self,"ArenaFooter","",Rect2(363,598,482,38),12,DULL)
+    _label(self,"ArenaFooter","",Rect2(363,591,482,20),11,DULL)
+    resonance_fill = _bar(self,"ResonanceBar",Rect2(364,617,262,12),LILAC)
+    resonance_button = _button(self,"Resonance","RESONANCE • CHARGE",Rect2(634,609,199,32),_activate_resonance,Color("#684878"))
+    resonance_button.add_theme_font_size_override("font_size",12)
 
     _panel(self,"UpgradePane",Rect2(879,86,389,565))
     _label(self,"UpgradesTitle","THE SANCTUARY",Rect2(896,101,354,28),20,JADE)
@@ -300,6 +332,12 @@ func _switch_tab(next: String) -> void:
                 card["mode"] = "module"
                 right_rows.append(card)
         "NEST":
+            for camp_key in ["nest","pack","altar"]:
+                var camp_row: Dictionary = _new_card("CAMP • "+String(ENGINE.CAMP_UPGRADES[camp_key]),"",
+                    "Build",_buy_camp.bind(camp_key),103)
+                camp_row["mode"] = "camp"
+                camp_row["key"] = camp_key
+                right_rows.append(camp_row)
             var egg: Dictionary = _new_card("The Moonlit Nest","Earn Nest Shards in combat and from guardian kills. Eggs recruit new species or strengthen bloodlines.","Hatch Egg",_hatch,130)
             egg["mode"] = "hatch"
             right_rows.append(egg)
@@ -336,6 +374,12 @@ func _switch_tab(next: String) -> void:
                 region_card["key"] = key
                 right_rows.append(region_card)
         "GOALS":
+            for contract in ENGINE.CONTRACTS:
+                var task: Dictionary = _new_card("CONTRACT • "+String(ENGINE.CONTRACT_TITLES[contract]),"",
+                    "Collect",_claim_contract.bind(contract),108)
+                task["mode"] = "contract"
+                task["key"] = contract
+                right_rows.append(task)
             var stats: Dictionary = _new_card("Adventure Record","", "Pause / Resume",_toggle_running)
             stats["mode"] = "record"
             right_rows.append(stats)
@@ -352,8 +396,19 @@ func _refresh() -> void:
     labels["Resources"].text = "Gold %s     Echoes %d     Nest Shards %d     Ascensions %d" % [
         game.format_number(game.gold),game.echoes,game.nests,game.ascensions]
     labels["RegionTitle"].text = String(ENGINE.REGIONS[game.region]["name"]).to_upper()
+    var status: String = game.enemy_mutator()
     labels["WaveTitle"].text = "WAVE %d  •  %s  •  Best %d" % [
-        game.wave,"GUARDIAN" if game.enemy_is_boss() else "WILD",game.best_wave]
+        game.wave,status.to_upper() if status != "" else "WILD",game.best_wave]
+    var bg_path: String = "res://assets/battle_meadow.png"
+    if game.region == "shore":
+        bg_path = "res://assets/battle_shore.png"
+    elif game.region == "embers":
+        bg_path = "res://assets/battle_woodland.png"
+    elif game.region == "sky":
+        bg_path = "res://assets/battle_shore.png"
+    if bg_path != _last_art_path:
+        arena_art.texture = load(bg_path) as Texture2D
+        _last_art_path = bg_path
     labels["EnemyName"].text = "%s • %s" % [
         String(ENGINE.SPECIES[game.enemy_species]["evolved" if game.enemy_is_boss() else "name"]),
         String(ENGINE.SPECIES[game.enemy_species]["element"])]
@@ -372,9 +427,16 @@ func _refresh() -> void:
     ward_fill.size.x = 476.0*clampf(game.ward/maxf(game.max_ward(),1.0),0.0,1.0)
     labels["DpsText"].text = "Pack DPS %s   •   Tap %s" % [
         game.format_number(game.total_dps()),game.format_number(maxf(2.0,game.total_dps()*0.53))]
-    labels["ArenaFooter"].text = "%s  •  %s  •  Win streak %d" % [
-        "OVERCLOCK" if game.overclock else "Normal Expedition",
-        "AUTO FARM" if game.repeat_wave else "Pushing Forward",game.current_streak]
+    labels["ArenaFooter"].text = "%s • %s • Streak %d • Contracts %d" % [
+        "OVERCLOCK" if game.overclock else "EXPEDITION",
+        "FARMING" if game.repeat_wave else "ADVANCING",game.current_streak,game.contracts_claimed]
+    resonance_fill.size.x = 258.0 * clampf(game.overdrive / 100.0,0.0,1.0)
+    resonance_button.disabled = game.overdrive < 99.99 or game.overdrive_left > 0.0
+    resonance_button.text = ("RESONANCE • %.0fs" % game.overdrive_left) if game.overdrive_left > 0.0 else (
+        "UNLEASH • READY" if game.overdrive >= 99.99 else ("RESONANCE  %d%%" % int(game.overdrive)))
+    for stance_key in focus_buttons:
+        focus_buttons[stance_key].modulate = Color.WHITE if game.stance == stance_key else Color("#91a4b3")
+    labels["TacticsNote"].text = game.stance_description()
     for kind in ENGINE.ORDER:
         var level: int = int(game.levels[kind])
         var owned: bool = level > 0
@@ -417,6 +479,22 @@ func _refresh_right() -> void:
         var mode: String = String(row["mode"])
         var key: String = String(row.get("key",""))
         match mode:
+            "contract":
+                var progress: int = game.contract_progress(key)
+                var target: int = game.contract_target(key)
+                var reward: Dictionary = game.contract_rewards(key)
+                info.text = "%s • %d / %d\nReward: %s Gold + %d shards%s" % [
+                    String(ENGINE.CONTRACT_DESCRIPTIONS[key]),mini(progress,target),target,
+                    game.format_number(float(reward["gold"])),int(reward["shards"]),
+                    (" + %d Echo" % int(reward["echoes"])) if int(reward["echoes"]) > 0 else ""]
+                action.text = "CLAIM REWARD" if game.contract_ready(key) else "IN PROGRESS"
+                action.disabled = not game.contract_ready(key)
+            "camp":
+                var rank: int = int(game.camp[key])
+                var cost: int = game.camp_cost(key)
+                info.text = "Rank %d • %s" % [rank,String(ENGINE.CAMP_DESCRIPTIONS[key])]
+                action.text = "BUILD • %d SHARDS" % cost
+                action.disabled = game.nests < cost
             "vault":
                 info.text = "Relic drops: %d • Equipped: %d / 2
 They persist through Ascension and grow with duplicates." % [game.relic_drops,game.equipped_relics.size()]
@@ -521,7 +599,11 @@ func _build_help_dialog() -> void:
         + "   Creature ownership, evolution, genes, bonds and research persist.\n"
         + "7. AUTOMATE: Legacy research unlocks auto-buy and auto-skills.\n"
         + "8. MAP: Discover harder regions or enable Overclock for more Gold.\n"
-        + "9. GOALS: Claim milestones for Echoes and Nest Shards.\n\n"
+        + "9. GOALS: Claim milestones and repeatable contracts.\n"
+        + "10. FORMATIONS: Balanced, Feral, Bulwark or Forager tactics.\n"
+        + "11. RESONANCE: Fill the purple bar from victories and taps,\n"
+        + "   then unleash a 12-second 2x damage burst.\n"
+        + "12. CAMP: Spend Nest Shards on permanent sanctuary buildings.\n\n"
         + "Grove beats Tide, Tide beats Ember, Ember beats Grove.\n"
         + "Progress autosaves every 20 seconds in this browser. Offline Gold\n"
         + "is capped at 4 hours, with no simulated waves or premium rewards.\n"
@@ -567,6 +649,28 @@ func _toggle_audio() -> void:
 
 func _equip_relic(key: String) -> void:
     if game.equip_relic(key):
+        audio.call("play_fx","confirm")
+        game.save()
+    _refresh()
+
+func _set_stance(next: String) -> void:
+    if game.set_stance(next):
+        game.save()
+    _refresh()
+
+func _activate_resonance() -> void:
+    if game.activate_overdrive():
+        audio.call("play_fx","victory")
+    _refresh()
+
+func _claim_contract(key: String) -> void:
+    if game.claim_contract(key):
+        audio.call("play_fx","victory")
+        game.save()
+    _refresh()
+
+func _buy_camp(key: String) -> void:
+    if game.buy_camp_upgrade(key):
         audio.call("play_fx","confirm")
         game.save()
     _refresh()
