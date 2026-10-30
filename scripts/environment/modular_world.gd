@@ -1,6 +1,7 @@
 extends Node2D
 # New isolated environment. No full-screen world sprite is drawn.
 # 24px tiles; real layer cells, original illustrated trees as movable scenes.
+const TREE_SCENE: PackedScene = preload("res://scenes/environment/tree_object.tscn")
 const TILE: int = 24
 const WIDTH: int = 48
 const HEIGHT: int = 14
@@ -112,39 +113,16 @@ func build() -> void:
     blocked.erase(PLAYER_SPAWN)
 
 func _add_tree_instances() -> void:
-    var source: Texture2D = load("res://assets/trees_atlas.png") as Texture2D
-    if source == null or source.get_size() != Vector2(256,80):
-        push_error("Original illustrated tree atlas unavailable")
-        return
     for entry in TREE_CELLS:
         var tile := Vector2i(entry.x,entry.y)
         if roads.get_cell_source_id(tile) != -1 or water.get_cell_source_id(tile) != -1:
             push_warning("Skipping tree on a road/water cell: " + str(tile))
             continue
-        var body := StaticBody2D.new()
-        body.name = "Tree_%d_%d" % [tile.x,tile.y]
-        body.position = cell_center(tile)
-        body.collision_layer = 1
-        body.collision_mask = 0
-        var frame := AtlasTexture.new()
-        frame.atlas = source
-        frame.region = Rect2i(entry.z*64,0,64,80)
-        frame.filter_clip = true
-        var graphic := Sprite2D.new()
-        graphic.name = "TreeArtwork"
-        graphic.texture = frame
-        graphic.centered = false
-        graphic.position = Vector2(-32,-72)
-        graphic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-        body.add_child(graphic)
-        var collision := CollisionShape2D.new()
-        collision.name = "TrunkCollision"
-        var trunk := RectangleShape2D.new()
-        trunk.size = Vector2(16,11)
-        collision.shape = trunk
-        collision.position = Vector2(0,-5)
-        body.add_child(collision)
-        objects.add_child(body)
+        var tree: StaticBody2D = TREE_SCENE.instantiate() as StaticBody2D
+        tree.name = "Tree_%d_%d" % [tile.x,tile.y]
+        tree.set("tree_variant",entry.z)
+        tree.position = cell_center(tile)
+        objects.add_child(tree)
         blocked[tile] = true
 
 func cell_center(cell: Vector2i) -> Vector2:
