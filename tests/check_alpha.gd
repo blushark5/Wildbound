@@ -121,6 +121,7 @@ func _test() -> void:
         "total_seconds","game_speed"]:
         old_format.erase(key)
     var old_file: FileAccess = FileAccess.open(ALPHA.SAVE_FILE,FileAccess.WRITE)
+    old_format["wave"] = 1
     old_format["saved_at"] = Time.get_unix_time_from_system() - 3600
     old_file.store_string(JSON.stringify(old_format))
     old_file.close()
