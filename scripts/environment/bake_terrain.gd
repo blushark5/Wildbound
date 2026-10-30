@@ -52,7 +52,7 @@ func _select(img: Image, area: Rect2i, kind: int, count: int) -> Array[Vector2i]
         var at: Vector2i = entry["at"]
         var too_close: bool = false
         for chosen in picked:
-            if at.distance_to(chosen) < 48.0:
+            if at.distance_to(chosen) < 26.0:
                 too_close = true
                 break
         if too_close:
