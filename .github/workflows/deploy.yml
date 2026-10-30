@@ -93,6 +93,9 @@ jobs:
       - name: Validate reboot combat, evolution, Ascension, and saves
         run: godot --headless --path creature-reboot --script res://tests/check_incremental.gd
 
+      - name: Validate extended Creature Ascension Alpha and save compatibility
+        run: godot --headless --path creature-reboot --script res://tests/check_alpha.gd
+
       - name: Export creature reboot to /reboot/
         run: |
           mkdir -p "$RUNNER_TEMP/wildbound-site/reboot"
