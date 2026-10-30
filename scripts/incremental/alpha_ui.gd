@@ -363,8 +363,8 @@ func _switch_tab(next: String) -> void:
             right_rows.append(guide)
             for creature in ENGINE.ORDER:
                 for choice in ENGINE.SPECIALIZATION_ORDER[creature]:
-                    var trait: Dictionary = ENGINE.SPECIALIZATIONS[creature][choice]
-                    var card: Dictionary = _new_card(String(ENGINE.SPECIES[creature]["name"])+" • "+String(trait["name"]),
+                    var mastery_data: Dictionary = ENGINE.SPECIALIZATIONS[creature][choice]
+                    var card: Dictionary = _new_card(String(ENGINE.SPECIES[creature]["name"])+" • "+String(mastery_data["name"]),
                         "","Choose",_set_mastery.bind(creature,choice),113)
                     card["mode"] = "mastery"
                     card["key"] = creature
@@ -512,7 +512,7 @@ func _refresh() -> void:
             String(ENGINE.ABILITY_NAMES[kind]),
             ("%ds" % ceili(available)) if available > 0.0 else "READY"]
         ally_skills[kind].disabled = not owned or available > 0.0
-    labels["PackFooter"].text = "Evolution: Level 15 + 25 bonds\nEvolved forms and genes survive Ascension."
+    labels["PackFooter"].text = "PACK TACTIC • "+game.stance.to_upper()
     labels["Notice"].text = game.last_notice
     buttons["AutoBuy"].text = "AUTO BUY %s" % ("ON" if game.auto_buy else "OFF")
     buttons["AutoBuy"].disabled = int(game.research["automation"]) < 1
