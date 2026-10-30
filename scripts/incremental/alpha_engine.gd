@@ -428,6 +428,15 @@ func load_save() -> bool:
     if not (parsed is Dictionary):
         return true
     var data: Dictionary = parsed
+    # Parent v0.1 loader restores only its original three modules and two
+    # research tracks. Restore expanded alpha keys explicitly before reading
+    # automation toggles, or their unlocks would silently disappear on reload.
+    var persisted_modules: Dictionary = data.get("modules",{})
+    var persisted_research: Dictionary = data.get("research",{})
+    for extra in EXTRA_MODULES:
+        modules[extra] = maxi(0,int(persisted_modules.get(extra,0)))
+    for extra in EXTRA_RESEARCH:
+        research[extra] = maxi(0,int(persisted_research.get(extra,0)))
     nests = maxi(0,int(data.get("nests",0)))
     eggs_hatched = maxi(0,int(data.get("eggs_hatched",0)))
     rare_pity = clampi(int(data.get("rare_pity",0)),0,9)
