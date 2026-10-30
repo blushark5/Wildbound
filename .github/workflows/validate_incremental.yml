@@ -25,6 +25,8 @@ jobs:
         run: godot --headless --path . --script res://tests/check_incremental.gd
       - name: Validate full alpha engine, migration and interface
         run: godot --headless --path . --script res://tests/check_alpha.gd
+      - name: Validate v0.3 tactics, elite enemies, contracts, camp and migration
+        run: godot --headless --path . --script res://tests/check_v03.gd
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
       - name: Capture actual rendered scene for visual review
