@@ -135,6 +135,7 @@ func _button(parent: Node, name: String, content: String, area: Rect2, action: C
     button.add_theme_color_override("font_disabled_color",Color("#798f97"))
     button.focus_mode = Control.FOCUS_NONE
     button.pressed.connect(action)
+    button.tooltip_text = content
     parent.add_child(button)
     buttons[name] = button
     return button
@@ -437,6 +438,18 @@ func _refresh() -> void:
     for stance_key in focus_buttons:
         focus_buttons[stance_key].modulate = Color.WHITE if game.stance == stance_key else Color("#91a4b3")
     labels["TacticsNote"].text = game.stance_description()
+    var claimable: bool = false
+    for contract_key in ENGINE.CONTRACTS:
+        if game.contract_ready(contract_key):
+            claimable = true
+            break
+    if not claimable:
+        for goal_key in ENGINE.MILESTONE_ORDER:
+            if not game.milestones_claimed.has(goal_key) and game.milestone_progress(goal_key) >= int(ENGINE.MILESTONES[goal_key]["goal"]):
+                claimable = true
+                break
+    tab_buttons["GOALS"].modulate = GOLD if claimable else (Color.WHITE if tab == "GOALS" else Color("#a8c4ca"))
+    tab_buttons["NEST"].modulate = JADE if game.nests >= game.hatch_cost() and tab != "NEST" else (Color.WHITE if tab == "NEST" else Color("#a8c4ca"))
     for kind in ENGINE.ORDER:
         var level: int = int(game.levels[kind])
         var owned: bool = level > 0
@@ -488,12 +501,14 @@ func _refresh_right() -> void:
                     game.format_number(float(reward["gold"])),int(reward["shards"]),
                     (" + %d Echo" % int(reward["echoes"])) if int(reward["echoes"]) > 0 else ""]
                 action.text = "CLAIM REWARD" if game.contract_ready(key) else "IN PROGRESS"
+                action.tooltip_text = "Repeatable objective • complete to receive earned Gold and Nest Shards."
                 action.disabled = not game.contract_ready(key)
             "camp":
                 var rank: int = int(game.camp[key])
                 var cost: int = game.camp_cost(key)
                 info.text = "Rank %d • %s" % [rank,String(ENGINE.CAMP_DESCRIPTIONS[key])]
                 action.text = "BUILD • %d SHARDS" % cost
+                action.tooltip_text = "Permanent camp improvement. Retained after Ascension."
                 action.disabled = game.nests < cost
             "vault":
                 info.text = "Relic drops: %d • Equipped: %d / 2
@@ -565,9 +580,9 @@ Keep companions, evolution, genes, bonds, regions and research."
                 action.text = "EXPLORING" if game.region == key else ("TRAVEL" if available else "LOCKED")
                 action.disabled = not available or game.region == key
             "record":
-                info.text = "Wins %d • Defeats %d • Best wave %d\nEggs %d • Echoes earned %d • Ascensions %d" % [
-                    game.kills,game.defeats,game.best_wave,game.eggs_hatched,
-                    game.lifetime_echoes,game.ascensions]
+                info.text = "Wins %d • Guardians %d • Contracts %d\nEggs %d • Ascensions %d • Resonances %d" % [
+                    game.kills,game.guardians_won,game.contracts_claimed,game.eggs_hatched,
+                    game.ascensions,game.overdrive_used]
                 action.text = "RESUME" if not running else "PAUSE COMBAT"
                 action.disabled = false
             "goal":
