@@ -62,6 +62,21 @@ func _test() -> void:
     if not g.buy_module("crit") or not g.buy_module("recovery"):
         _die("New field modules did not purchase")
         return
+    g.wave = 10
+    g._spawn_enemy()
+    g._fit_enemy_to_region()
+    g.attack(g.enemy_hp+1.0)
+    if g.relic_drops < 1:
+        _die("First guardian should guarantee a collectible Relic")
+        return
+    var found_relic: String = ""
+    for key in ALPHA.RELIC_ORDER:
+        if int(g.relic_ranks[key]) > 0:
+            found_relic = key
+            break
+    if found_relic == "" or not g.equip_relic(found_relic) or not g.equipped_relics.has(found_relic):
+        _die("Permanent Relic could not be equipped")
+        return
     g.best_wave = 120
     if not g.region_available("sky") or not g.select_region("sky"):
         _die("Late-game region not unlockable")
@@ -110,12 +125,12 @@ func _test() -> void:
         return
     if restored.gene["spriglet"] != 5 or not restored.rare["spriglet"] or \
         not restored.evolved["spriglet"] or restored.research["automation"] < 1 or \
-        restored.region != "sky" or not restored.auto_buy or restored.game_speed != 2.0:
+        restored.region != "sky" or not restored.auto_buy or restored.game_speed != 2.0 or         not restored.equipped_relics.has(found_relic) or restored.relic_drops < 1:
         _die("Permanent alpha progression lost during save/load")
         return
     # Legacy v0.1 records deliberately omit new alpha fields.
     var old_format: Dictionary = persisted.duplicate(true)
-    for key in ["alpha_save_version","nests","eggs_hatched","gene","rare","rare_pity",
+    for key in ["alpha_save_version","relic_ranks","equipped_relics","relic_drops","nests","eggs_hatched","gene","rare","rare_pity",
         "milestones_claimed","region","overclock","auto_buy","auto_skills",
         "lifetime_gold","lifetime_echoes","greatest_streak","last_boss_wave",
         "total_seconds","game_speed"]:
@@ -128,7 +143,7 @@ func _test() -> void:
     var migrated = ALPHA.new()
     migrated.initialize_alpha()
     if not migrated.load_save() or not migrated.evolved["spriglet"] or \
-        migrated.gene["spriglet"] != 0 or migrated.region != "meadow":
+        migrated.gene["spriglet"] != 0 or migrated.region != "meadow" or migrated.relic_drops != 0:
         _die("Legacy v0.1 save migration failed")
         return
     if migrated.offline_gold <= 0.0 or migrated.offline_gold > 1.0e18 or migrated.wave != 1:
@@ -158,6 +173,14 @@ func _test() -> void:
             has_ascend = true
     if not has_ascend or instance.get_node_or_null("Guide") == null or instance.get_node_or_null("Sound") == null:
         _die("Ascension, guide or sound controls missing")
+        return
+    instance.call("_switch_tab","RELICS")
+    var has_relic: bool = false
+    for row in instance.right_rows:
+        if row.get("mode","") == "relic":
+            has_relic = true
+    if not has_relic:
+        _die("Relic equipment inventory tab missing")
         return
     instance.call("_switch_tab","MAP")
     instance.call("_switch_tab","GOALS")
