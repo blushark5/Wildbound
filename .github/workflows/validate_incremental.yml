@@ -4,6 +4,12 @@ on:
     branches: [feature/wildbound-creature-incremental-reboot]
   workflow_dispatch:
 
+# Each feature-branch commit triggers validation; obsolete queued runs should
+# never consume runners or delay the latest vetted game build.
+concurrency:
+  group: wildbound-incremental-branch-validation
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
