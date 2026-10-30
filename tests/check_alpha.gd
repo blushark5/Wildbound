@@ -44,6 +44,12 @@ func _test() -> void:
     if g.eggs_hatched != count or g.rare_pity > 9:
         _die("Rare hatch pity counter exceeded its guarantee")
         return
+    g.rare_pity = 9
+    g.nests += g.hatch_cost()
+    var guaranteed: String = g.hatch_egg()
+    if not bool(g.rare[guaranteed]) or g.rare_pity != 0:
+        _die("Tenth egg did not guarantee Shimmer rarity")
+        return
     g.gold = 1.0e12
     if not g.buy_levels("spriglet",15):
         _die("Creature leveling broke")
@@ -129,6 +135,13 @@ func _test() -> void:
         _die("Critical game buttons missing")
         return
     instance.call("_switch_tab","LEGACY")
+    var has_ascend: bool = false
+    for row in instance.right_rows:
+        if row.get("mode","") == "ascend":
+            has_ascend = true
+    if not has_ascend or instance.get_node_or_null("Guide") == null or instance.get_node_or_null("Sound") == null:
+        _die("Ascension, guide or sound controls missing")
+        return
     instance.call("_switch_tab","MAP")
     instance.call("_switch_tab","GOALS")
     instance.call("_switch_tab","NEST")
