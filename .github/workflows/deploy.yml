@@ -79,6 +79,28 @@ jobs:
           godot --headless --path experimental --export-release "Web" "$RUNNER_TEMP/wildbound-site/dev/index.html"
           test -s "$RUNNER_TEMP/wildbound-site/dev/index.html"
 
+      # Separate playable creature-incremental reboot. The stable game and
+      # GBA development preview keep their existing URLs and save files.
+      - name: Checkout Creature Ascension reboot
+        uses: actions/checkout@v4
+        with:
+          ref: feature/wildbound-creature-incremental-reboot
+          path: creature-reboot
+
+      - name: Import reboot assets and validate Godot scripts
+        run: godot --headless --path creature-reboot --editor --import --quit
+
+      - name: Validate reboot combat, evolution, Ascension, and saves
+        run: godot --headless --path creature-reboot --script res://tests/check_incremental.gd
+
+      - name: Export creature reboot to /reboot/
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/reboot"
+          godot --headless --path creature-reboot --export-release "Web" "$RUNNER_TEMP/wildbound-site/reboot/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/reboot/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/reboot/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/reboot/index.wasm"
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
