@@ -1,0 +1,553 @@
+extends Control
+## WILDBOUND — Creature Ascension Alpha
+## One-screen arena with deep tabbed builds/collection/research/map/milestones.
+const ENGINE = preload("res://scripts/incremental/alpha_engine.gd")
+const BG := Color("#0c1724")
+const CARD := Color("#172b3c")
+const CARD_ALT := Color("#1b3744")
+const BORDER := Color("#3c6472")
+const INK := Color("#f5e9cc")
+const GOLD := Color("#f6c978")
+const JADE := Color("#91e1b8")
+const DULL := Color("#a9bccb")
+const LILAC := Color("#c8abe8")
+const CORAL := Color("#edaa91")
+const TABS: Array[String] = ["FORGE","NEST","LEGACY","MAP","GOALS"]
+
+var game
+var running: bool = true
+var batch: int = 1
+var tab: String = "FORGE"
+var clock: float = 0.0
+var autosave_clock: float = 0.0
+var visual_time: float = 0.0
+var labels: Dictionary = {}
+var buttons: Dictionary = {}
+var portraits: Dictionary = {}
+var ally_skills: Dictionary = {}
+var enemy_portrait: TextureRect
+var enemy_fill: ColorRect
+var ward_fill: ColorRect
+var arena_panel: Panel
+var tab_column: VBoxContainer
+var tab_scroll: ScrollContainer
+var right_rows: Array[Dictionary] = []
+var tab_buttons: Dictionary = {}
+var damage_text: Label
+
+func _ready() -> void:
+    game = ENGINE.new()
+    game.initialize_alpha()
+    game.load_save()
+    game.notice.connect(_on_notice)
+    _layout()
+    _switch_tab("FORGE")
+    _refresh()
+
+func _process(delta: float) -> void:
+    visual_time += delta
+    if running:
+        game.tick(delta)
+    clock += delta
+    autosave_clock += delta
+    if clock > 0.16:
+        clock = 0.0
+        _refresh()
+    if autosave_clock > 20.0:
+        autosave_clock = 0.0
+        game.save()
+
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_WM_CLOSE_REQUEST and game != null:
+        game.save()
+
+func _unhandled_key_input(event: InputEvent) -> void:
+    if event is InputEventKey and event.pressed and not event.echo:
+        if event.keycode == KEY_SPACE:
+            _tap()
+            get_viewport().set_input_as_handled()
+        elif event.keycode == KEY_ESCAPE:
+            _toggle_running()
+            get_viewport().set_input_as_handled()
+
+func _style(fill: Color = CARD, edge: Color = BORDER, radius: int = 9) -> StyleBoxFlat:
+    var style := StyleBoxFlat.new()
+    style.bg_color = fill
+    style.border_color = edge
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(radius)
+    style.content_margin_left = 10
+    style.content_margin_right = 10
+    style.content_margin_top = 9
+    style.content_margin_bottom = 9
+    return style
+
+func _panel(parent: Node, name: String, area: Rect2, tint: Color = CARD) -> Panel:
+    var p := Panel.new()
+    p.name = name
+    p.position = area.position
+    p.size = area.size
+    p.add_theme_stylebox_override("panel",_style(tint))
+    parent.add_child(p)
+    return p
+
+func _label(parent: Node, name: String, content: String, area: Rect2, size: int = 16, color: Color = INK) -> Label:
+    var label := Label.new()
+    label.name = name
+    label.position = area.position
+    label.size = area.size
+    label.text = content
+    label.add_theme_font_size_override("font_size",size)
+    label.add_theme_color_override("font_color",color)
+    label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    parent.add_child(label)
+    labels[name] = label
+    return label
+
+func _button(parent: Node, name: String, content: String, area: Rect2, action: Callable, color: Color = Color("#2b6971")) -> Button:
+    var button := Button.new()
+    button.name = name
+    button.text = content
+    button.position = area.position
+    button.size = area.size
+    button.add_theme_font_size_override("font_size",14)
+    button.add_theme_color_override("font_color",INK)
+    button.add_theme_stylebox_override("normal",_style(color,Color("#638f91"),6))
+    button.add_theme_stylebox_override("hover",_style(color.lightened(0.13),JADE,6))
+    button.add_theme_stylebox_override("pressed",_style(color.darkened(0.09),JADE,6))
+    button.add_theme_stylebox_override("disabled",_style(Color("#253945"),Color("#41515a"),6))
+    button.add_theme_color_override("font_disabled_color",Color("#798f97"))
+    button.focus_mode = Control.FOCUS_NONE
+    button.pressed.connect(action)
+    parent.add_child(button)
+    buttons[name] = button
+    return button
+
+func _image(parent: Node, kind: String, area: Rect2) -> TextureRect:
+    var pic := TextureRect.new()
+    pic.position = area.position
+    pic.size = area.size
+    pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    pic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    parent.add_child(pic)
+    _apply_art(pic,kind)
+    return pic
+
+func _apply_art(pic: TextureRect, kind: String, is_enemy: bool = false) -> void:
+    if not ENGINE.SPECIES.has(kind):
+        return
+    var evolution: bool = game.enemy_is_boss() if is_enemy else bool(game.evolved[kind])
+    var path: String = "res://assets/%s%s_front.png" % [kind,"_evo" if evolution else ""]
+    if pic.texture == null or pic.texture.resource_path != path:
+        pic.texture = load(path) as Texture2D
+    if not is_enemy:
+        pic.modulate = Color("#e7ddff") if bool(game.rare[kind]) else Color.WHITE
+
+func _bar(parent: Node, name: String, area: Rect2, color: Color) -> ColorRect:
+    var bg := ColorRect.new()
+    bg.position = area.position
+    bg.size = area.size
+    bg.color = BG
+    bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    parent.add_child(bg)
+    var fill := ColorRect.new()
+    fill.name = name
+    fill.position = area.position + Vector2(2,2)
+    fill.size = area.size - Vector2(4,4)
+    fill.color = color
+    fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    parent.add_child(fill)
+    return fill
+
+func _layout() -> void:
+    var background := ColorRect.new()
+    background.name = "Backdrop"
+    background.color = BG
+    background.position = Vector2.ZERO
+    background.size = Vector2(1280,720)
+    background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    add_child(background)
+
+    _panel(self,"Header",Rect2(12,10,1256,65),CARD_ALT)
+    _label(self,"Logo","WILDBOUND",Rect2(29,17,270,38),31,JADE)
+    _label(self,"Sublogo","CREATURE ASCENSION  •  ALPHA",Rect2(31,51,280,15),11,DULL)
+    _label(self,"Resources","",Rect2(380,18,867,44),20,GOLD)
+
+    _panel(self,"PackPane",Rect2(12,86,318,565))
+    _label(self,"PackTitle","YOUR WILDBOUND PACK",Rect2(28,101,282,29),20,JADE)
+    _label(self,"PackHint","Level creatures • evolve • unlock abilities",Rect2(28,132,282,20),12,DULL)
+
+    for i in range(3):
+        var kind: String = String(ENGINE.ORDER[i])
+        var y: float = 157.0 + 137.0 * float(i)
+        _panel(self,"PackCard_"+kind,Rect2(26,y,291,130),CARD_ALT)
+        portraits[kind] = _image(self,kind,Rect2(30,y+6,98,87))
+        _label(self,"name_"+kind,"",Rect2(126,y+10,179,23),17,INK)
+        _label(self,"stats_"+kind,"",Rect2(126,y+38,180,40),12,DULL)
+        _button(self,"buy_"+kind,"",Rect2(126,y+77,177,28),_buy_creature.bind(kind))
+        ally_skills[kind] = _button(self,"skill_"+kind,"",Rect2(37,y+105,267,23),_ability.bind(kind),Color("#425b84"))
+        ally_skills[kind].add_theme_font_size_override("font_size",12)
+    _label(self,"PackFooter","",Rect2(30,574,280,59),13,MINT_COLOR())
+
+    arena_panel = _panel(self,"ArenaPane",Rect2(340,86,528,565),Color("#19383c"))
+    _label(self,"RegionTitle","",Rect2(362,101,482,28),22,JADE)
+    _label(self,"WaveTitle","",Rect2(362,134,480,24),17,GOLD)
+    _panel(self,"EnemyArena",Rect2(364,169,480,281),Color("#244b4a"))
+    _label(self,"EnemyName","",Rect2(385,183,410,28),19,INK)
+    enemy_portrait = _image(self,"brinlet",Rect2(505,201,209,160))
+    damage_text = _label(self,"DamageText","",Rect2(382,363,443,22),14,CORAL)
+    _label(self,"EnemyHp","",Rect2(382,391,443,22),14,INK)
+    enemy_fill = _bar(self,"EnemyBar",Rect2(381,416,444,14),CORAL)
+    _button(self,"Tap","STRIKE  •  CLICK / SPACE",Rect2(385,452,439,44),_tap,Color("#946342"))
+    _label(self,"WardText","",Rect2(363,510,480,23),15,INK)
+    ward_fill = _bar(self,"WardBar",Rect2(362,537,480,18),JADE)
+    _label(self,"DpsText","",Rect2(363,570,475,23),15,GOLD)
+    _label(self,"ArenaFooter","",Rect2(363,598,482,38),12,DULL)
+
+    _panel(self,"UpgradePane",Rect2(879,86,389,565))
+    _label(self,"UpgradesTitle","THE SANCTUARY",Rect2(896,101,354,28),20,JADE)
+    for i in range(TABS.size()):
+        var current_tab: String = TABS[i]
+        var tx: float = 893.0 + float(i)*73.0
+        var b: Button = _button(self,"tab_"+current_tab,current_tab,Rect2(tx,134,70,31),_switch_tab.bind(current_tab),Color("#395874"))
+        b.add_theme_font_size_override("font_size",11)
+        tab_buttons[current_tab] = b
+    tab_scroll = ScrollContainer.new()
+    tab_scroll.name = "UpgradeScroll"
+    tab_scroll.position = Vector2(897,177)
+    tab_scroll.size = Vector2(352,455)
+    tab_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    add_child(tab_scroll)
+    tab_column = VBoxContainer.new()
+    tab_column.name = "UpgradeCards"
+    tab_column.custom_minimum_size = Vector2(329,0)
+    tab_column.add_theme_constant_override("separation",9)
+    tab_scroll.add_child(tab_column)
+
+    _panel(self,"Footer",Rect2(12,663,1256,46),CARD_ALT)
+    _label(self,"Notice","",Rect2(26,676,491,28),13,INK)
+    _button(self,"AutoBuy","AUTO BUY",Rect2(522,670,124,32),_toggle_auto_buy)
+    _button(self,"AutoSkills","AUTO SKILLS",Rect2(653,670,129,32),_toggle_auto_skills)
+    _button(self,"Repeat","REPEAT OFF",Rect2(789,670,125,32),_toggle_repeat)
+    _button(self,"Batch","BUY x1",Rect2(921,670,94,32),_toggle_batch)
+    _button(self,"Speed","1x SPEED",Rect2(1022,670,111,32),_toggle_speed)
+    _button(self,"Save","SAVE",Rect2(1140,670,112,32),_save)
+
+func MINT_COLOR() -> Color:
+    return DULL
+
+func _new_card(title: String, description: String, button_text: String, fn: Callable, min_height: float = 102.0) -> Dictionary:
+    var card := PanelContainer.new()
+    card.custom_minimum_size = Vector2(326,min_height)
+    card.add_theme_stylebox_override("panel",_style(CARD_ALT,Color("#426f7b"),7))
+    tab_column.add_child(card)
+    var content := VBoxContainer.new()
+    content.add_theme_constant_override("separation",3)
+    card.add_child(content)
+    var name_label := Label.new()
+    name_label.text = title
+    name_label.add_theme_font_size_override("font_size",16)
+    name_label.add_theme_color_override("font_color",JADE)
+    content.add_child(name_label)
+    var info := Label.new()
+    info.text = description
+    info.add_theme_font_size_override("font_size",12)
+    info.add_theme_color_override("font_color",DULL)
+    info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    content.add_child(info)
+    var button := Button.new()
+    button.text = button_text
+    button.custom_minimum_size = Vector2(301,27)
+    button.add_theme_font_size_override("font_size",13)
+    button.add_theme_color_override("font_color",INK)
+    button.add_theme_stylebox_override("normal",_style(Color("#295f66"),Color("#668f93"),5))
+    button.add_theme_stylebox_override("hover",_style(Color("#398276"),JADE,5))
+    button.add_theme_stylebox_override("disabled",_style(Color("#293941"),Color("#405662"),5))
+    button.add_theme_color_override("font_disabled_color",Color("#7d969d"))
+    button.focus_mode = Control.FOCUS_NONE
+    button.pressed.connect(fn)
+    content.add_child(button)
+    return {"title":name_label,"info":info,"button":button}
+
+func _switch_tab(next: String) -> void:
+    tab = next
+    for key in tab_buttons:
+        tab_buttons[key].modulate = Color.WHITE if key == tab else Color("#a8c4ca")
+    for child in tab_column.get_children():
+        tab_column.remove_child(child)
+        child.queue_free()
+    right_rows.clear()
+    tab_scroll.scroll_vertical = 0
+    match tab:
+        "FORGE":
+            for kind in ENGINE.MODULES + ENGINE.EXTRA_MODULES:
+                var card: Dictionary = _new_card(ENGINE.MODULE_NAMES[kind],"", "Buy",_purchase_module.bind(kind))
+                card["key"] = kind
+                card["mode"] = "module"
+                right_rows.append(card)
+        "NEST":
+            var egg: Dictionary = _new_card("The Moonlit Nest","Earn Nest Shards in combat and from guardian kills. Eggs recruit new species or strengthen bloodlines.","Hatch Egg",_hatch,130)
+            egg["mode"] = "hatch"
+            right_rows.append(egg)
+            for kind in ENGINE.ORDER:
+                var row: Dictionary = _new_card(String(ENGINE.SPECIES[kind]["name"])+" Lineage","", "Inspect",_inspect_species.bind(kind))
+                row["mode"] = "lineage"
+                row["key"] = kind
+                right_rows.append(row)
+        "LEGACY":
+            for kind in ["might","heart"] + ENGINE.EXTRA_RESEARCH:
+                var card: Dictionary = _new_card(ENGINE.RESEARCH_NAMES[kind],"", "Research",_purchase_research.bind(kind))
+                card["mode"] = "research"
+                card["key"] = kind
+                right_rows.append(card)
+        "MAP":
+            var difficulty: Dictionary = _new_card("Overclock Challenge","Elite enemies gain extra health/damage in return for 2.4x Gold. Switch any time.","Toggle",_toggle_overclock)
+            difficulty["mode"] = "overclock"
+            right_rows.append(difficulty)
+            for key in ENGINE.REGION_ORDER:
+                var region_card: Dictionary = _new_card(String(ENGINE.REGIONS[key]["name"]),"", "Travel",_change_region.bind(key))
+                region_card["mode"] = "region"
+                region_card["key"] = key
+                right_rows.append(region_card)
+        "GOALS":
+            var stats: Dictionary = _new_card("Adventure Record","", "Pause / Resume",_toggle_running)
+            stats["mode"] = "record"
+            right_rows.append(stats)
+            for key in ENGINE.MILESTONE_ORDER:
+                var goal: Dictionary = _new_card(String(ENGINE.MILESTONES[key]["title"]),"", "Claim",_claim.bind(key))
+                goal["mode"] = "goal"
+                goal["key"] = key
+                right_rows.append(goal)
+    _refresh_right()
+
+func _refresh() -> void:
+    if game == null:
+        return
+    labels["Resources"].text = "Gold %s     Echoes %d     Nest Shards %d     Ascensions %d" % [
+        game.format_number(game.gold),game.echoes,game.nests,game.ascensions]
+    labels["RegionTitle"].text = String(ENGINE.REGIONS[game.region]["name"]).to_upper()
+    labels["WaveTitle"].text = "WAVE %d  •  %s  •  Best %d" % [
+        game.wave,"GUARDIAN" if game.enemy_is_boss() else "WILD",game.best_wave]
+    labels["EnemyName"].text = "%s • %s" % [
+        String(ENGINE.SPECIES[game.enemy_species]["evolved" if game.enemy_is_boss() else "name"]),
+        String(ENGINE.SPECIES[game.enemy_species]["element"])]
+    _apply_art(enemy_portrait,game.enemy_species,true)
+    var visual_bounce: float = sin(visual_time*2.3)*3.0
+    enemy_portrait.position.y = 199.0 + visual_bounce
+    enemy_portrait.modulate = Color("#ffddbb") if game.damage_flash > 0.0 else Color.WHITE
+    damage_text.text = "%s  %s" % ["CRITICAL" if game.recent_critical else "HIT",
+        game.format_number(game.recent_hit)] if game.damage_flash > 0.0 else (
+        "Guardian battle • higher rewards" if game.enemy_is_boss() else "Element cycle: Grove > Tide > Ember > Grove")
+    labels["EnemyHp"].text = "Enemy  %s / %s HP" % [
+        game.format_number(maxf(game.enemy_hp,0.0)),game.format_number(game.enemy_max_hp)]
+    enemy_fill.size.x = 440.0*clampf(game.enemy_hp/maxf(game.enemy_max_hp,1.0),0.0,1.0)
+    labels["WardText"].text = "PACK SANCTUARY WARD  %s / %s" % [
+        game.format_number(game.ward),game.format_number(game.max_ward())]
+    ward_fill.size.x = 476.0*clampf(game.ward/maxf(game.max_ward(),1.0),0.0,1.0)
+    labels["DpsText"].text = "Pack DPS %s   •   Tap %s" % [
+        game.format_number(game.total_dps()),game.format_number(maxf(2.0,game.total_dps()*0.53))]
+    labels["ArenaFooter"].text = "%s  •  %s  •  Win streak %d" % [
+        "OVERCLOCK" if game.overclock else "Normal Expedition",
+        "AUTO FARM" if game.repeat_wave else "Pushing Forward",game.current_streak]
+    for kind in ENGINE.ORDER:
+        var level: int = int(game.levels[kind])
+        var owned: bool = level > 0
+        var rare_text: String = " ✦" if bool(game.rare[kind]) else ""
+        labels["name_"+kind].text = (game.species_name(kind)+rare_text) if owned else (String(ENGINE.SPECIES[kind]["name"])+" • Locked")
+        labels["stats_"+kind].text = "Lv %d • %s\nBond %d • Genes %d" % [
+            level,String(ENGINE.SPECIES[kind]["element"]),
+            int(game.bonds[kind]),int(game.gene[kind])] if owned else "Recruit with Gold\nor hatch a Nest Egg"
+        _apply_art(portraits[kind],kind)
+        portraits[kind].modulate = Color("#bbbec8") if not owned else (Color("#dbbeff") if bool(game.rare[kind]) else Color.WHITE)
+        var price: float = game.purchase_cost(kind,batch if owned else 1)
+        buttons["buy_"+kind].text = ("%s   %s G" % [
+            "Level +"+str(batch) if owned else "Recruit",
+            game.format_number(price)])
+        buttons["buy_"+kind].disabled = game.gold < price
+        var available: float = float(game.ability_clock[kind])
+        ally_skills[kind].text = "%s  %s" % [
+            String(ENGINE.ABILITY_NAMES[kind]),
+            ("%ds" % ceili(available)) if available > 0.0 else "READY"]
+        ally_skills[kind].disabled = not owned or available > 0.0
+    labels["PackFooter"].text = "Evolution: Level 15 + 25 bonds\nEvolved forms and genes survive Ascension."
+    labels["Notice"].text = game.last_notice
+    buttons["AutoBuy"].text = "AUTO BUY %s" % ("ON" if game.auto_buy else "OFF")
+    buttons["AutoBuy"].disabled = int(game.research["automation"]) < 1
+    buttons["AutoSkills"].text = "SKILLS %s" % ("AUTO" if game.auto_skills else "MANUAL")
+    buttons["AutoSkills"].disabled = int(game.research["instinct"]) < 1
+    buttons["Repeat"].text = "REPEAT %s" % ("ON" if game.repeat_wave else "OFF")
+    buttons["Batch"].text = "BUY x%d" % batch
+    buttons["Speed"].text = "%sx SPEED" % str(int(game.game_speed))
+    buttons["Save"].text = "SAVE %s" % ("PAUSED" if not running else "NOW")
+    _refresh_right()
+
+func _refresh_right() -> void:
+    if game == null:
+        return
+    for row in right_rows:
+        var info: Label = row["info"]
+        var action: Button = row["button"]
+        var mode: String = String(row["mode"])
+        var key: String = String(row.get("key",""))
+        match mode:
+            "module":
+                var rank: int = int(game.modules[key])
+                var cost: float = game.module_cost(key)
+                var effects: Dictionary = {
+                    "power":"+13% attack damage per rank",
+                    "guard":"+22 Ward capacity per rank",
+                    "tempo":"+6% attack speed per rank",
+                    "crit":"+3.5% critical chance per rank",
+                    "bounty":"+15% Gold per rank",
+                    "recovery":"Sanctuary health regeneration",
+                    "pierce":"+20% damage vs Guardians"}
+                info.text = "Rank %d • %s" % [rank,String(effects.get(key,""))]
+                action.text = "Upgrade • %s Gold" % game.format_number(cost)
+                action.disabled = game.gold < cost
+            "hatch":
+                info.text = "Shards %d / %d • Hatched %d\nRare pity: %d / 10 • Duplicate eggs strengthen genes." % [
+                    game.nests,game.hatch_cost(),game.eggs_hatched,game.rare_pity]
+                action.text = "HATCH EGG  •  %d SHARDS" % game.hatch_cost()
+                action.disabled = game.nests < game.hatch_cost()
+            "lineage":
+                info.text = "Genes %d • %s • %s" % [
+                    int(game.gene[key]),"SHIMMER FOUND" if bool(game.rare[key]) else "Standard",
+                    "Evolved" if bool(game.evolved[key]) else "Not yet evolved"]
+                action.text = "VIEW LINEAGE"
+                action.disabled = false
+            "research":
+                var rank: int = int(game.research[key])
+                var cost: int = game.research_cost(key)
+                var desc: Dictionary = {
+                    "might":"+22% pack damage/rank",
+                    "heart":"+18% Sanctuary Ward/rank",
+                    "bounty":"+12% Gold income/rank",
+                    "speed":"+8% attack power, +3% speed/rank",
+                    "scavenge":"Extra Nest Shards and Echo bonuses",
+                    "incubator":"+rare egg chance, +4% Ward/rank",
+                    "automation":"Unlock automatic Gold spending",
+                    "instinct":"Unlock automatic creature abilities"}
+                info.text = "Rank %d • %s" % [rank,String(desc.get(key,"Permanent bonus"))]
+                action.text = "RESEARCH  •  %d ECHOES" % cost
+                action.disabled = game.echoes < cost
+            "overclock":
+                info.text = "2x enemy health • 1.65x enemy damage\n2.4x Gold rewards while active."
+                action.text = "OVERCLOCK  %s" % ("ENABLED" if game.overclock else "DISABLED")
+                action.disabled = false
+            "region":
+                var data: Dictionary = ENGINE.REGIONS[key]
+                var available: bool = game.region_available(key)
+                info.text = "%s • %.1fx foe HP • %.1fx Gold\nUnlock at best wave %d" % [
+                    String(data["element"]),float(data["hp"]),float(data["gold"]),int(data["unlock"])]
+                action.text = "EXPLORING" if game.region == key else ("TRAVEL" if available else "LOCKED")
+                action.disabled = not available or game.region == key
+            "record":
+                info.text = "Wins %d • Defeats %d • Best wave %d\nEggs %d • Echoes earned %d • Ascensions %d" % [
+                    game.kills,game.defeats,game.best_wave,game.eggs_hatched,
+                    game.lifetime_echoes,game.ascensions]
+                action.text = "RESUME" if not running else "PAUSE COMBAT"
+                action.disabled = false
+            "goal":
+                var data: Dictionary = ENGINE.MILESTONES[key]
+                var progress: int = game.milestone_progress(key)
+                var target: int = int(data["goal"])
+                var claimed: bool = game.milestones_claimed.has(key)
+                info.text = "%s • %d / %d" % [String(data["desc"]),mini(progress,target),target]
+                action.text = "CLAIMED" if claimed else (
+                    "CLAIM +%d Echoes / +%d Shards" % [int(data["echoes"]),int(data["shards"])])
+                action.disabled = claimed or progress < target
+
+func _buy_creature(kind: String) -> void:
+    var owned: bool = int(game.levels[kind]) > 0
+    if game.buy_levels(kind,batch if owned else 1):
+        game.last_notice = "%s strengthened! Total pack DPS %s." % [
+            game.species_name(kind),game.format_number(game.total_dps())]
+    _refresh()
+
+func _ability(kind: String) -> void:
+    if game.use_ability(kind):
+        _refresh()
+
+func _purchase_module(kind: String) -> void:
+    if game.buy_module(kind):
+        game.last_notice = "%s upgraded to rank %d." % [ENGINE.MODULE_NAMES[kind],int(game.modules[kind])]
+    _refresh()
+
+func _purchase_research(kind: String) -> void:
+    if game.buy_research(kind):
+        game.save()
+    _refresh()
+
+func _hatch() -> void:
+    if game.hatch_egg() != "":
+        game.save()
+    _refresh()
+
+func _inspect_species(kind: String) -> void:
+    game.last_notice = "%s • Genes %d • %s • %d Bond victories." % [
+        game.species_name(kind),int(game.gene[kind]),
+        "Shimmer rarity" if game.rare[kind] else "Common heritage",
+        int(game.bonds[kind])]
+    _refresh()
+
+func _change_region(key: String) -> void:
+    if game.select_region(key):
+        game.save()
+    _refresh()
+
+func _toggle_overclock() -> void:
+    game.toggle_overclock()
+    _refresh()
+
+func _claim(key: String) -> void:
+    if game.claim_milestone(key):
+        game.save()
+    _refresh()
+
+func _tap() -> void:
+    if running:
+        game.tap()
+    _refresh()
+
+func _toggle_auto_buy() -> void:
+    if int(game.research["automation"]) < 1:
+        return
+    game.auto_buy = not game.auto_buy
+    game.last_notice = "Automatic workshop %s." % ("enabled" if game.auto_buy else "disabled")
+    _refresh()
+
+func _toggle_auto_skills() -> void:
+    if int(game.research["instinct"]) < 1:
+        return
+    game.auto_skills = not game.auto_skills
+    game.last_notice = "Automatic skills %s." % ("enabled" if game.auto_skills else "disabled")
+    _refresh()
+
+func _toggle_repeat() -> void:
+    game.repeat_wave = not game.repeat_wave
+    _refresh()
+
+func _toggle_batch() -> void:
+    batch = 10 if batch == 1 else (25 if batch == 10 else 1)
+    _refresh()
+
+func _toggle_speed() -> void:
+    game.game_speed = 2.0 if game.game_speed < 2.0 else 1.0
+    _refresh()
+
+func _toggle_running() -> void:
+    running = not running
+    game.last_notice = "Expedition resumed." if running else "Expedition paused."
+    _refresh()
+
+func _save() -> void:
+    if game.save():
+        game.last_notice = "Adventure safely saved in this browser."
+    _refresh()
+
+func _on_notice(_message: String) -> void:
+    if is_node_ready() and labels.has("Notice"):
+        _refresh()
