@@ -159,5 +159,7 @@ func _run() -> void:
     if camps != 3:
         _die("Permanent sanctuary upgrades missing from NEST tab")
         return
+    # UI click tests save state; remove fixture so QA shows a true first launch.
+    DirAccess.remove_absolute(ProjectSettings.globalize_path(ENGINE.SAVE_FILE))
     print("PASS v0.3: tactics, overdrive, elites, contracts, camp, permanent Ascension, v0.2 migration, live UI buttons")
     quit(0)
