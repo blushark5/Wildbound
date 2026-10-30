@@ -1,7 +1,7 @@
 extends Control
 ## WILDBOUND — Creature Ascension Alpha
 ## One-screen arena with deep tabbed builds/collection/research/map/milestones.
-const ENGINE = preload("res://scripts/incremental/v03_engine.gd")
+const ENGINE = preload("res://scripts/incremental/v04_engine.gd")
 const AUDIO = preload("res://scripts/audio.gd")
 const BG := Color("#0c1724")
 const CARD := Color("#172b3c")
@@ -13,7 +13,7 @@ const JADE := Color("#91e1b8")
 const DULL := Color("#a9bccb")
 const LILAC := Color("#c8abe8")
 const CORAL := Color("#edaa91")
-const TABS: Array[String] = ["FORGE","NEST","RELICS","LEGACY","MAP","GOALS"]
+const TABS: Array[String] = ["FORGE","NEST","PACK","RELICS","LEGACY","MAP","GOALS"]
 
 var game
 var running: bool = true
@@ -41,6 +41,11 @@ var resonance_fill: ColorRect
 var resonance_button: Button
 var _last_art_path: String = ""
 var _last_visual_wave: int = -1
+var fury_label: Label
+var combo_label: Label
+var mastery_cards: Dictionary = {}
+var options_dialog: AcceptDialog
+var motion_reduced: bool = false
 var audio: Node
 var help_dialog: AcceptDialog
 var ascend_dialog: ConfirmationDialog
@@ -49,6 +54,7 @@ func _ready() -> void:
     game = ENGINE.new()
     game.initialize_alpha()
     game.load_save()
+    motion_reduced = game.ui_compact
     game.notice.connect(_on_notice)
     audio = AUDIO.new()
     add_child(audio)
@@ -56,6 +62,7 @@ func _ready() -> void:
     _layout()
     _build_help_dialog()
     _build_ascend_dialog()
+    _build_options_dialog()
     _switch_tab("FORGE")
     _refresh()
 
@@ -189,8 +196,9 @@ func _layout() -> void:
 
     _panel(self,"Header",Rect2(12,10,1256,65),CARD_ALT)
     _label(self,"Logo","WILDBOUND",Rect2(29,17,270,38),31,JADE)
-    _label(self,"Sublogo","CREATURE ASCENSION  •  ALPHA 0.3",Rect2(31,51,280,15),11,DULL)
-    _label(self,"Resources","",Rect2(380,18,700,44),20,GOLD)
+    _label(self,"Sublogo","CREATURE ASCENSION  •  ALPHA 0.4",Rect2(31,51,280,15),11,DULL)
+    _label(self,"Resources","",Rect2(367,18,628,44),19,GOLD)
+    _button(self,"Options","OPTIONS",Rect2(1000,25,83,34),_show_options,Color("#3e5c77"))
     _button(self,"Guide","GUIDE",Rect2(1090,25,78,34),_show_help,Color("#3e5c77"))
     _button(self,"Sound","SOUND OFF",Rect2(1176,25,76,34),_toggle_audio,Color("#3e5c77"))
 
@@ -220,6 +228,7 @@ func _layout() -> void:
     arena_panel = _panel(self,"ArenaPane",Rect2(340,86,528,565),Color("#19383c"))
     _label(self,"RegionTitle","",Rect2(362,101,482,28),22,JADE)
     _label(self,"WaveTitle","",Rect2(362,134,480,24),17,GOLD)
+    fury_label = _label(self,"FuryCountdown","",Rect2(705,153,133,18),12,CORAL)
     _panel(self,"EnemyArena",Rect2(364,169,480,281),Color("#244b4a"))
     arena_art = TextureRect.new()
     arena_art.name = "ArenaIllustration"
@@ -240,6 +249,7 @@ func _layout() -> void:
     _label(self,"EnemyName","",Rect2(385,183,410,28),19,INK)
     enemy_portrait = _image(self,"brinlet",Rect2(505,201,209,160))
     damage_text = _label(self,"DamageText","",Rect2(382,363,443,22),14,CORAL)
+    combo_label = _label(self,"ComboCounter","",Rect2(661,365,169,22),14,LILAC)
     _label(self,"EnemyHp","",Rect2(382,391,443,22),14,INK)
     enemy_fill = _bar(self,"EnemyBar",Rect2(381,416,444,14),CORAL)
     _button(self,"Tap","STRIKE  •  CLICK / SPACE",Rect2(385,452,439,44),_tap,Color("#946342"))
@@ -255,9 +265,9 @@ func _layout() -> void:
     _label(self,"UpgradesTitle","THE SANCTUARY",Rect2(896,101,354,28),20,JADE)
     for i in range(TABS.size()):
         var current_tab: String = TABS[i]
-        var tx: float = 893.0 + float(i)*59.0
-        var b: Button = _button(self,"tab_"+current_tab,current_tab,Rect2(tx,134,56,31),_switch_tab.bind(current_tab),Color("#395874"))
-        b.add_theme_font_size_override("font_size",11)
+        var tx: float = 891.0 + float(i)*51.0
+        var b: Button = _button(self,"tab_"+current_tab,current_tab,Rect2(tx,134,49,31),_switch_tab.bind(current_tab),Color("#395874"))
+        b.add_theme_font_size_override("font_size",9)
         tab_buttons[current_tab] = b
     tab_scroll = ScrollContainer.new()
     tab_scroll.name = "UpgradeScroll"
@@ -347,6 +357,19 @@ func _switch_tab(next: String) -> void:
                 row["mode"] = "lineage"
                 row["key"] = kind
                 right_rows.append(row)
+        "PACK":
+            var guide: Dictionary = _new_card("BOND MASTERY","Each evolved creature with 25 bonds can choose a lasting specialization. The first choice is free; switching costs 12 earned Nest Shards.","FIELD GUIDE",_show_help,121)
+            guide["mode"] = "mastery_guide"
+            right_rows.append(guide)
+            for creature in ENGINE.ORDER:
+                for choice in ENGINE.SPECIALIZATION_ORDER[creature]:
+                    var trait: Dictionary = ENGINE.SPECIALIZATIONS[creature][choice]
+                    var card: Dictionary = _new_card(String(ENGINE.SPECIES[creature]["name"])+" • "+String(trait["name"]),
+                        "","Choose",_set_mastery.bind(creature,choice),113)
+                    card["mode"] = "mastery"
+                    card["key"] = creature
+                    card["choice"] = choice
+                    right_rows.append(card)
         "RELICS":
             var vault: Dictionary = _new_card("RELIC VAULT","Guardian kills yield permanent relics. You may equip any two. Duplicates upgrade their bonuses.","VIEW FIELD GUIDE",_show_help,118)
             vault["mode"] = "vault"
@@ -375,6 +398,15 @@ func _switch_tab(next: String) -> void:
                 region_card["key"] = key
                 right_rows.append(region_card)
         "GOALS":
+            var cache_overview: Dictionary = _new_card("WILD CACHES","Every 25 cleared waves grants a choice of valuable rewards. Unclaimed caches survive Ascension.","Collect",_show_help,118)
+            cache_overview["mode"] = "cache_guide"
+            right_rows.append(cache_overview)
+            for reward_key in ENGINE.CACHE_ORDER:
+                var cache: Dictionary = _new_card(String(ENGINE.CACHE_CHOICES[reward_key]["name"]),"",
+                    "Claim",_claim_cache.bind(reward_key),104)
+                cache["mode"] = "cache"
+                cache["key"] = reward_key
+                right_rows.append(cache)
             for contract in ENGINE.CONTRACTS:
                 var task: Dictionary = _new_card("CONTRACT • "+String(ENGINE.CONTRACT_TITLES[contract]),"",
                     "Collect",_claim_contract.bind(contract),108)
@@ -414,9 +446,11 @@ func _refresh() -> void:
         String(ENGINE.SPECIES[game.enemy_species]["evolved" if game.enemy_is_boss() else "name"]),
         String(ENGINE.SPECIES[game.enemy_species]["element"])]
     _apply_art(enemy_portrait,game.enemy_species,true)
-    var visual_bounce: float = sin(visual_time*2.3)*3.0
+    fury_label.text = ("FURY • %ds" % maxi(0,18-ceili(game.guardian_seconds))) if game.enemy_is_boss() and not game.guardian_enraged else ("FURY ACTIVE!" if game.enemy_is_boss() else "")
+    var visual_bounce: float = 0.0 if motion_reduced else sin(visual_time*2.3)*3.0
     enemy_portrait.position.y = 199.0 + visual_bounce
-    enemy_portrait.modulate = Color("#ffddbb") if game.damage_flash > 0.0 else Color.WHITE
+    enemy_portrait.modulate = Color("#ffddbb") if game.damage_flash > 0.0 and not motion_reduced else Color.WHITE
+    combo_label.text = ("COMBO x%d" % game.combo_hits) if game.combo_hits >= 2 else ""
     damage_text.text = "%s  %s" % ["CRITICAL" if game.recent_critical else "HIT",
         game.format_number(game.recent_hit)] if game.damage_flash > 0.0 else (
         "Guardian battle • higher rewards" if game.enemy_is_boss() else "Element cycle: Grove > Tide > Ember > Grove")
@@ -428,9 +462,9 @@ func _refresh() -> void:
     ward_fill.size.x = 476.0*clampf(game.ward/maxf(game.max_ward(),1.0),0.0,1.0)
     labels["DpsText"].text = "Pack DPS %s   •   Tap %s" % [
         game.format_number(game.total_dps()),game.format_number(maxf(2.0,game.total_dps()*0.53))]
-    labels["ArenaFooter"].text = "%s • %s • Streak %d • Contracts %d" % [
+    labels["ArenaFooter"].text = "%s • %s • Streak %d • Caches %d" % [
         "OVERCLOCK" if game.overclock else "EXPEDITION",
-        "FARMING" if game.repeat_wave else "ADVANCING",game.current_streak,game.contracts_claimed]
+        "FARMING" if game.repeat_wave else "ADVANCING",game.current_streak,game.caches_pending]
     resonance_fill.size.x = 258.0 * clampf(game.overdrive / 100.0,0.0,1.0)
     resonance_button.disabled = game.overdrive < 99.99 or game.overdrive_left > 0.0
     resonance_button.text = ("RESONANCE • %.0fs" % game.overdrive_left) if game.overdrive_left > 0.0 else (
@@ -438,7 +472,10 @@ func _refresh() -> void:
     for stance_key in focus_buttons:
         focus_buttons[stance_key].modulate = Color.WHITE if game.stance == stance_key else Color("#91a4b3")
     labels["TacticsNote"].text = game.stance_description()
-    var claimable: bool = false
+    for creature in ENGINE.ORDER:
+        var label: Label = labels["name_"+creature]
+        label.tooltip_text = "Mastery: "+game.spec_name(creature)
+    var claimable: bool = game.caches_pending > 0
     for contract_key in ENGINE.CONTRACTS:
         if game.contract_ready(contract_key):
             claimable = true
@@ -450,6 +487,11 @@ func _refresh() -> void:
                 break
     tab_buttons["GOALS"].modulate = GOLD if claimable else (Color.WHITE if tab == "GOALS" else Color("#a8c4ca"))
     tab_buttons["NEST"].modulate = JADE if game.nests >= game.hatch_cost() and tab != "NEST" else (Color.WHITE if tab == "NEST" else Color("#a8c4ca"))
+    var mastery_ready: bool = false
+    for creature in ENGINE.ORDER:
+        if game.can_specialize(creature) and game.specialization[creature] == "":
+            mastery_ready = true
+    tab_buttons["PACK"].modulate = GOLD if mastery_ready and tab != "PACK" else (Color.WHITE if tab == "PACK" else Color("#a8c4ca"))
     for kind in ENGINE.ORDER:
         var level: int = int(game.levels[kind])
         var owned: bool = level > 0
@@ -492,6 +534,29 @@ func _refresh_right() -> void:
         var mode: String = String(row["mode"])
         var key: String = String(row.get("key",""))
         match mode:
+            "mastery_guide":
+                info.text = "Choose one lasting trait per evolved creature. Your first mastery is free and remains after Ascension."
+                action.text = "READ FIELD GUIDE"
+                action.disabled = false
+            "mastery":
+                var choice: String = String(row["choice"])
+                var traits: Dictionary = ENGINE.SPECIALIZATIONS[key]
+                var chosen: String = String(game.specialization[key])
+                var unlocked: bool = game.can_specialize(key)
+                var change_cost: int = 12 if chosen != "" else 0
+                info.text = String(traits[choice]["desc"]) + ("\nNeeds Level 15 evolution + 25 bonds." if not unlocked else "")
+                action.text = "SELECTED" if chosen == choice else ("CHANGE • 12 SHARDS" if chosen != "" else "CHOOSE MASTERY")
+                action.disabled = not unlocked or chosen == choice or game.nests < change_cost
+            "cache_guide":
+                info.text = "%d unopened caches • %d already claimed. Clear a new wave 25/50/75/... to receive another." % [
+                    game.caches_pending,game.caches_claimed]
+                action.text = "LEARN ABOUT CACHES"
+                action.disabled = false
+            "cache":
+                var options: Dictionary = ENGINE.CACHE_CHOICES[key]
+                info.text = String(options["desc"])
+                action.text = "TAKE "+String(options["name"]).to_upper() if game.caches_pending > 0 else "NO CACHES AVAILABLE"
+                action.disabled = game.caches_pending < 1
             "contract":
                 var progress: int = game.contract_progress(key)
                 var target: int = game.contract_target(key)
@@ -618,7 +683,10 @@ func _build_help_dialog() -> void:
         + "10. FORMATIONS: Balanced, Feral, Bulwark or Forager tactics.\n"
         + "11. RESONANCE: Fill the purple bar from victories and taps,\n"
         + "   then unleash a 12-second 2x damage burst.\n"
-        + "12. CAMP: Spend Nest Shards on permanent sanctuary buildings.\n\n"
+        + "12. CAMP: Spend Nest Shards on permanent sanctuary buildings.\n"
+        + "13. PACK: After evolution, choose a specialization for each line.\n"
+        + "14. CACHES: Every 25 new cleared waves grants a reward choice.\n"
+        + "15. COMBO: Click rhythmically to multiply your manual strikes.\n\n"
         + "Grove beats Tide, Tide beats Ember, Ember beats Grove.\n"
         + "Progress autosaves every 20 seconds in this browser. Offline Gold\n"
         + "is capped at 4 hours, with no simulated waves or premium rewards.\n"
@@ -688,6 +756,40 @@ func _buy_camp(key: String) -> void:
     if game.buy_camp_upgrade(key):
         audio.call("play_fx","confirm")
         game.save()
+    _refresh()
+
+func _set_mastery(kind: String, choice: String) -> void:
+    if game.specialize(kind,choice):
+        audio.call("play_fx","evolve")
+        game.save()
+    _refresh()
+
+func _claim_cache(choice: String) -> void:
+    if game.claim_cache(choice):
+        audio.call("play_fx","capture")
+        game.save()
+    _refresh()
+
+func _build_options_dialog() -> void:
+    options_dialog = AcceptDialog.new()
+    options_dialog.title = "Wildbound • Accessibility & Controls"
+    options_dialog.dialog_text = "Enable reduced animation to stop creature bobbing and hit flashes.\nYour progression is autosaved every 20 seconds.\nSpace: strike • Escape: pause • Click buttons to upgrade."
+    var toggle := CheckButton.new()
+    toggle.name = "ReduceMotion"
+    toggle.text = "Reduce animations and hit flashes"
+    toggle.set_pressed_no_signal(motion_reduced)
+    toggle.toggled.connect(_toggle_reduced_motion)
+    options_dialog.add_child(toggle)
+    options_dialog.add_child.call_deferred(toggle)
+    add_child(options_dialog)
+
+func _show_options() -> void:
+    options_dialog.popup_centered(Vector2i(580,270))
+
+func _toggle_reduced_motion(value: bool) -> void:
+    motion_reduced = value
+    game.ui_compact = value
+    game.save()
     _refresh()
 
 func _buy_creature(kind: String) -> void:
