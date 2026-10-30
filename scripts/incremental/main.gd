@@ -8,7 +8,7 @@ const PAPER := Color("#f8eacb")
 const MINT := Color("#80e2bb")
 const GOLD := Color("#f4c96b")
 const MUTED := Color("#a9bed0")
-var game: RefCounted
+var game
 var labels: Dictionary = {}
 var buttons: Dictionary = {}
 var portraits: Dictionary = {}
@@ -140,7 +140,7 @@ func _build_interface() -> void:
     _make_panel(Rect2(12,84,288,391))
     _make_label("roster_title","YOUR BONDED PACK",Rect2(25,96,268,30),20,MINT)
     for i in range(3):
-        var kind: String = String(game.ORDER[i])
+        var kind: String = String(ENGINE.ORDER[i])
         var top: float = 135.0+i*109.0
         _make_panel(Rect2(23,top,264,102),PANEL_ALT)
         portraits[kind] = _make_portrait(kind,Rect2(31,top+10.0,76,76))
@@ -165,7 +165,7 @@ func _build_interface() -> void:
     _make_panel(Rect2(666,84,282,391))
     _make_label("module_title","FIELD UPGRADES",Rect2(682,96,246,28),20,MINT)
     for i in range(3):
-        var kind: String = String(game.MODULES[i])
+        var kind: String = String(ENGINE.MODULES[i])
         var y: float = 130.0+i*67.0
         _make_label("module_"+kind,"",Rect2(681,y,244,21),14,PAPER)
         _make_button("module_buy_"+kind,"",Rect2(682,y+24,245,30),_buy_module.bind(kind))
@@ -198,10 +198,10 @@ func _refresh() -> void:
     if game == null:
         return
     labels["top_stats"].text = "Gold  %s     Echoes  %d     Best Wave  %d" % [_fmt(game.gold),game.echoes,game.best_wave]
-    for kind in game.ORDER:
+    for kind in ENGINE.ORDER:
         var level: int = int(game.levels[kind])
-        labels[kind+"_name"].text = game.species_name(kind) if level > 0 else str(game.SPECIES[kind]["name"])+"  • Locked"
-        labels[kind+"_info"].text = ("Lv %d | %s\nBond %d / 25" % [level,str(game.SPECIES[kind]["element"]),int(game.bonds[kind])]) if level > 0 else "Recruit your next creature"
+        labels[kind+"_name"].text = game.species_name(kind) if level > 0 else str(ENGINE.SPECIES[kind]["name"])+"  • Locked"
+        labels[kind+"_info"].text = ("Lv %d | %s\nBond %d / 25" % [level,str(ENGINE.SPECIES[kind]["element"]),int(game.bonds[kind])]) if level > 0 else "Recruit your next creature"
         var cost: float = game.purchase_cost(kind,buy_batch)
         buttons["buy_"+kind].text = ("%s  %s Gold" % [("Level +" + str(buy_batch)) if level > 0 else "Recruit",_fmt(cost)])
         buttons["buy_"+kind].disabled = game.gold < cost
@@ -217,7 +217,7 @@ func _refresh() -> void:
     labels["ward_value"].text = "%s / %s" % [_fmt(game.ward),_fmt(game.max_ward())]
     ward_bar.value = clampf(game.ward/maxf(1.0,game.max_ward())*100.0,0.0,100.0)
     labels["battle_dps"].text = "Pack DPS: %s    |    Manual hit: %s" % [_fmt(game.total_dps()),_fmt(maxf(2.0,game.total_dps()*0.53))]
-    for kind in game.MODULES:
+    for kind in ENGINE.MODULES:
         var rank: int = int(game.modules[kind])
         var desc: String = "Attack Power" if kind == "power" else ("Ward Strength" if kind == "guard" else "Attack Speed")
         labels["module_"+kind].text = "%s  •  Rank %d" % [desc,rank]
