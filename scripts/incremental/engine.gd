@@ -56,6 +56,18 @@ func species_damage(kind: String) -> float:
     var family: float = 1.06 if int(levels["spriglet"]) > 0 and int(levels["brinlet"]) > 0 and int(levels["cindlet"]) > 0 else 1.0
     return base * pow(1.19,float(lv-1)) * evolved_multiplier * gear * legacy * family
 
+func effective_damage(kind: String) -> float:
+    # Original Wildbound elemental circle. A creature choice is a build choice.
+    var attacking: String = String(SPECIES[kind]["element"])
+    var defending: String = String(SPECIES[enemy_species]["element"])
+    var wins: Dictionary = {"Grove":"Tide","Tide":"Ember","Ember":"Grove"}
+    var multiplier: float = 1.0
+    if String(wins.get(attacking,"")) == defending:
+        multiplier = 1.50
+    elif String(wins.get(defending,"")) == attacking:
+        multiplier = 0.75
+    return species_damage(kind)*multiplier
+
 func attack_interval(kind: String) -> float:
     return maxf(0.18,float(SPECIES[kind]["interval"])*pow(0.94,float(int(modules["tempo"]))))
 
@@ -107,7 +119,7 @@ func tick(delta: float) -> void:
         var strikes: int = 0
         while clock >= interval and strikes < 4:
             clock -= interval
-            attack(species_damage(kind))
+            attack(effective_damage(kind))
             strikes += 1
         attack_clocks[kind] = clock
     enemy_clock += duration
