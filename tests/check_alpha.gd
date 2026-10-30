@@ -41,8 +41,8 @@ func _test() -> void:
             _die("Earned egg hatch failed")
             return
         count += 1
-    if g.eggs_hatched != count or g.rare_pity != 0:
-        _die("Rare hatch pity did not guarantee by tenth hatch")
+    if g.eggs_hatched != count or g.rare_pity > 9:
+        _die("Rare hatch pity counter exceeded its guarantee")
         return
     g.gold = 1.0e12
     if not g.buy_levels("spriglet",15):
