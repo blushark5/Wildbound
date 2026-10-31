@@ -84,7 +84,8 @@ jobs:
       - name: Checkout Creature Ascension reboot
         uses: actions/checkout@v4
         with:
-          ref: feature/wildbound-creature-incremental-reboot
+          # Pinned to previously validated v0.4 while v0.5 artwork is in visual review.
+          ref: 4eb3f7ca75542f7e4fc053c39fac95b9c668ff82
           path: creature-reboot
 
       - name: Import reboot assets and validate Godot scripts
@@ -109,6 +110,33 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-site/reboot/index.html"
           test -s "$RUNNER_TEMP/wildbound-site/reboot/index.pck"
           test -s "$RUNNER_TEMP/wildbound-site/reboot/index.wasm"
+
+      # Independent v0.5 presentation preview. Staged art changes must
+      # not overwrite the published /reboot/ game or its save profile.
+      - name: Checkout visual review build
+        uses: actions/checkout@v4
+        with:
+          ref: feature/wildbound-creature-incremental-reboot
+          path: visual-review
+
+      - name: Separate visual-review browser saves
+        run: |
+          sed -i 's/Wildbound: Creature Ascension (Prototype)/Wildbound: Visual Review (Sandbox)/g' visual-review/project.godot
+          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_visual_review_v1.json/g' visual-review/scripts/incremental/engine.gd
+
+      - name: Import visual review art and validate scripts
+        run: godot --headless --path visual-review --editor --import --quit
+
+      - name: Check illustrated UI, evolved poses, region scenes and live buttons
+        run: godot --headless --path visual-review --script res://tests/check_visual_v05.gd
+
+      - name: Export visual study separately to /visual/
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/visual"
+          godot --headless --path visual-review --export-release "Web" "$RUNNER_TEMP/wildbound-site/visual/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/visual/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/visual/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/visual/index.wasm"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
