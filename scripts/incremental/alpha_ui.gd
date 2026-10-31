@@ -3,6 +3,7 @@ extends Control
 ## One-screen arena with deep tabbed builds/collection/research/map/milestones.
 const ENGINE = preload("res://scripts/incremental/v04_engine.gd")
 const AUDIO = preload("res://scripts/audio.gd")
+const VISUALS = preload("res://scripts/incremental/visual_skin_v05.gd")
 const BG := Color("#0c1724")
 const CARD := Color("#172b3c")
 const CARD_ALT := Color("#1b3744")
@@ -27,6 +28,9 @@ var buttons: Dictionary = {}
 var portraits: Dictionary = {}
 var ally_skills: Dictionary = {}
 var enemy_portrait: TextureRect
+var ally_portrait: TextureRect
+var ally_lead_label: Label
+var _last_ally_texture: String = ""
 var enemy_fill: ColorRect
 var ward_fill: ColorRect
 var arena_panel: Panel
@@ -60,6 +64,7 @@ func _ready() -> void:
     add_child(audio)
     audio.set("muted",true) # Audio opt-in, compatible with browser gesture rules.
     _layout()
+    VISUALS.apply(self)
     _build_help_dialog()
     _build_ascend_dialog()
     _build_options_dialog()
@@ -196,7 +201,7 @@ func _layout() -> void:
 
     _panel(self,"Header",Rect2(12,10,1256,65),CARD_ALT)
     _label(self,"Logo","WILDBOUND",Rect2(29,17,270,38),31,JADE)
-    _label(self,"Sublogo","CREATURE ASCENSION  •  ALPHA 0.4",Rect2(31,51,280,15),11,DULL)
+    _label(self,"Sublogo","CREATURE ASCENSION  •  VISUAL ALPHA 0.5",Rect2(31,51,280,15),11,DULL)
     _label(self,"Resources","",Rect2(367,18,628,44),19,GOLD)
     _button(self,"Options","OPTIONS",Rect2(1000,25,83,34),_show_options,Color("#3e5c77"))
     _button(self,"Guide","GUIDE",Rect2(1090,25,78,34),_show_help,Color("#3e5c77"))
@@ -204,7 +209,7 @@ func _layout() -> void:
 
     _panel(self,"PackPane",Rect2(12,86,318,565))
     _label(self,"PackTitle","YOUR WILDBOUND PACK",Rect2(28,101,282,29),20,JADE)
-    _label(self,"PackHint","Level creatures • evolve • unlock abilities",Rect2(28,132,282,20),12,DULL)
+    _label(self,"PackHint","Build your pack • evolve • awaken",Rect2(28,132,282,20),12,DULL)
 
     for i in range(3):
         var kind: String = String(ENGINE.ORDER[i])
@@ -237,17 +242,19 @@ func _layout() -> void:
     arena_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     arena_art.stretch_mode = TextureRect.STRETCH_SCALE
     arena_art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-    arena_art.modulate = Color(0.63,0.72,0.75,0.62)
+    arena_art.modulate = Color(0.91,0.96,0.95,0.89)
     arena_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
     add_child(arena_art)
     var arena_gradient: ColorRect = ColorRect.new()
-    arena_gradient.color = Color(0.03,0.08,0.13,0.24)
+    arena_gradient.color = Color(0.02,0.07,0.10,0.18)
     arena_gradient.position = Vector2(367,172)
     arena_gradient.size = Vector2(474,274)
     arena_gradient.mouse_filter = Control.MOUSE_FILTER_IGNORE
     add_child(arena_gradient)
-    _label(self,"EnemyName","",Rect2(385,183,410,28),19,INK)
-    enemy_portrait = _image(self,"brinlet",Rect2(505,201,209,160))
+    _label(self,"EnemyName","",Rect2(515,183,305,28),18,INK)
+    ally_lead_label = _label(self,"AllyLead","YOUR PACK",Rect2(390,220,170,22),12,JADE)
+    ally_portrait = _image(self,"spriglet",Rect2(400,252,130,114))
+    enemy_portrait = _image(self,"brinlet",Rect2(563,206,226,164))
     damage_text = _label(self,"DamageText","",Rect2(382,363,443,22),14,CORAL)
     combo_label = _label(self,"ComboCounter","",Rect2(661,365,169,22),14,LILAC)
     _label(self,"EnemyHp","",Rect2(382,391,443,22),14,INK)
@@ -324,7 +331,7 @@ func _new_card(title: String, description: String, button_text: String, fn: Call
     button.focus_mode = Control.FOCUS_NONE
     button.pressed.connect(fn)
     content.add_child(button)
-    return {"title":name_label,"info":info,"button":button}
+    return {"title":name_label,"info":info,"button":button,"card":card}
 
 func _switch_tab(next: String) -> void:
     tab = next
@@ -421,7 +428,31 @@ func _switch_tab(next: String) -> void:
                 goal["mode"] = "goal"
                 goal["key"] = key
                 right_rows.append(goal)
+    for row in right_rows:
+        VISUALS.apply_right_card(row["card"],row["title"],row["button"],String(row["mode"]))
     _refresh_right()
+
+func _refresh_ally_art() -> void:
+    var lead: String = "spriglet"
+    var strongest: float = -1.0
+    for kind in ENGINE.ORDER:
+        if int(game.levels[kind]) < 1:
+            continue
+        var active_dps: float = game.species_damage(kind) / game.attack_interval(kind)
+        if active_dps > strongest:
+            strongest = active_dps
+            lead = kind
+    var evolved_suffix: String = "_evo" if bool(game.evolved[lead]) else ""
+    var path: String = "res://assets/%s%s_back.png" % [lead,evolved_suffix]
+    if path != _last_ally_texture:
+        var source: Texture2D = load(path) as Texture2D
+        if source != null:
+            ally_portrait.texture = source
+            _last_ally_texture = path
+    ally_lead_label.text = "YOUR PACK • "+game.species_name(lead).to_upper()
+    ally_lead_label.add_theme_color_override("font_color",
+        Color("#84dca8") if lead == "spriglet" else (
+            Color("#6ec4ef") if lead == "brinlet" else Color("#f2b177")))
 
 func _refresh() -> void:
     if game == null:
@@ -456,10 +487,12 @@ func _refresh() -> void:
         String(ENGINE.SPECIES[game.enemy_species]["evolved" if game.enemy_is_boss() else "name"]),
         String(ENGINE.SPECIES[game.enemy_species]["element"])]
     _apply_art(enemy_portrait,game.enemy_species,true)
+    _refresh_ally_art()
     fury_label.text = ("FURY • %ds" % maxi(0,18-ceili(game.guardian_seconds))) if game.enemy_is_boss() and not game.guardian_enraged else ("FURY ACTIVE!" if game.enemy_is_boss() else "")
     var visual_bounce: float = 0.0 if motion_reduced else sin(visual_time*2.3)*3.0
     enemy_portrait.position.y = 199.0 + visual_bounce
-    enemy_portrait.position.x = 505.0 + (sin(visual_time*57.0)*3.0 if game.damage_flash > 0.0 and not motion_reduced else 0.0)
+    enemy_portrait.position.x = 563.0 + (sin(visual_time*57.0)*3.0 if game.damage_flash > 0.0 and not motion_reduced else 0.0)
+    ally_portrait.position.y = 252.0 + (0.0 if motion_reduced else sin(visual_time*2.0 + 1.0)*2.0)
     enemy_portrait.modulate = Color("#ffddbb") if game.damage_flash > 0.0 and not motion_reduced else Color.WHITE
     combo_label.text = ("COMBO x%d" % game.combo_hits) if game.combo_hits >= 2 else ""
     damage_text.text = "%s  %s" % ["CRITICAL" if game.recent_critical else "HIT",
