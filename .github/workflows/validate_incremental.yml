@@ -1,13 +1,13 @@
 name: Wildbound creature incremental reboot
 on:
   push:
-    branches: [feature/wildbound-creature-incremental-reboot]
+    branches: [feature/wildbound-art-and-ui-v06]
   workflow_dispatch:
 
 # Each feature-branch commit triggers validation; obsolete queued runs should
 # never consume runners or delay the latest vetted game build.
 concurrency:
-  group: wildbound-incremental-branch-validation
+  group: wildbound-v06-visual-branch-validation
   cancel-in-progress: true
 
 permissions:
@@ -37,6 +37,8 @@ jobs:
         run: godot --headless --path . --script res://tests/check_v04.gd
       - name: Validate original artwork integration and interactive battle UI
         run: godot --headless --path . --script res://tests/check_visual_v05.gd
+      - name: Validate three-creature visual v0.6 battle and legacy UI
+        run: godot --headless --path . --script res://tests/check_visual_v06.gd
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
       - name: Capture actual rendered scene for visual review
@@ -50,6 +52,13 @@ jobs:
         with:
           name: wildbound-alpha-rendered-qa
           path: Docs/QA/wildbound_alpha.png
+      - name: Capture real redesigned v0.6 stage
+        run: xvfb-run -a godot --path . --script res://tests/capture_visual_v06.gd
+      - name: Publish v0.6 rendered screenshot for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v06-stage-visual-qa
+          path: Docs/QA/wildbound_visual_v06.png
       - name: Upload actual screenshot
         uses: actions/upload-artifact@v4
         with:
