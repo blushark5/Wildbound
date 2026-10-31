@@ -31,5 +31,22 @@ func _capture() -> void:
     DirAccess.make_dir_recursive_absolute(dest.get_base_dir())
     if img.save_png(dest) != OK:
         push_error("Screenshot couldn't be saved"); quit(1); return
-    print("Rendered v0.6 actual playable scene "+dest)
+    print("Rendered original starter roster "+dest)
+    # Inspect all three evolved species facing an actual Guardian separately.
+    for creature in ["spriglet","brinlet","cindlet"]:
+        screen.game.evolved[creature] = true
+        screen.game.levels[creature] = 40
+    screen.game.wave = 50
+    screen.game.best_wave = 50
+    screen.game._spawn_enemy()
+    screen.game._fit_enemy_to_region()
+    screen.call("_refresh")
+    for i in range(6):
+        await process_frame
+    await RenderingServer.frame_post_draw
+    var evolved: Image = viewport.get_texture().get_image()
+    var evolved_path: String = ProjectSettings.globalize_path("res://Docs/QA/wildbound_visual_v07_evolved.png")
+    if evolved == null or evolved.is_empty() or evolved.save_png(evolved_path) != OK:
+        push_error("Evolved Guardian screenshot failure"); quit(1); return
+    print("Rendered original evolved forms "+evolved_path)
     quit(0)
