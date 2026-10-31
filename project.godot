@@ -3,7 +3,7 @@ config_version=5
 
 [application]
 config/name="Wildbound: Creature Ascension (Prototype)"
-run/main_scene="res://scenes/incremental/wildbound_visual_v06.tscn"
+run/main_scene="res://scenes/incremental/wildbound_visual_v07.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [display]
