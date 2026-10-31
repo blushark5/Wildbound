@@ -5,6 +5,7 @@ extends "res://scripts/incremental/alpha_ui.gd"
 
 const COMBAT_FX = preload("res://scripts/incremental/combat_fx_v06.gd")
 const ART_BANK = preload("res://scripts/incremental/portrait_bank_v06.gd")
+const SCENERY = preload("res://scripts/incremental/scenery_bank_v06.gd")
 const SPRITE_SHADER = preload("res://assets/shaders/creature_rim_v06.gdshader")
 const SHADES: Dictionary = {
     "spriglet": Color("#90f2b3"),
@@ -19,6 +20,8 @@ var art_fx: Control
 var resource_chips: Dictionary = {}
 var mobile_hint: Label
 var glow_strip: ColorRect
+var _meadow_texture: Texture2D
+var _old_arena_texture: Texture2D
 
 func _layout() -> void:
     super._layout()
@@ -107,7 +110,9 @@ func _create_resource_chips() -> void:
 
 func _redesign_battle() -> void:
     var background: TextureRect = arena_art
-    background.modulate = Color(1,1,1,0.96)
+    _meadow_texture = SCENERY.forest()
+    background.modulate = Color(1,1,1,0.94)
+    background.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
     var readability: ColorRect = get_node_or_null("ReadableContentVeil") as ColorRect
     if readability != null:
         readability.color = Color("#061521",0.09)
@@ -132,8 +137,14 @@ func _redesign_battle() -> void:
     enemy_title.add_theme_color_override("font_color",Color("#ffdfb3"))
     var subtitles: Label = get_node("DamageText") as Label
     subtitles.add_theme_color_override("font_color",Color("#ffe4c2"))
+    subtitles.add_theme_color_override("font_shadow_color",Color("#06202a"))
+    subtitles.add_theme_constant_override("shadow_offset_x",2)
+    subtitles.add_theme_constant_override("shadow_offset_y",2)
     var health: Label = get_node("EnemyHp") as Label
     health.add_theme_color_override("font_color",Color("#f5edd8"))
+    health.add_theme_color_override("font_shadow_color",Color("#06202a"))
+    health.add_theme_constant_override("shadow_offset_x",2)
+    health.add_theme_constant_override("shadow_offset_y",2)
     var button: Button = get_node("Tap") as Button
     button.add_theme_font_size_override("font_size",18)
     button.add_theme_stylebox_override("normal",_style(Color("#74462d"),Color("#f1bf79"),8))
@@ -141,6 +152,12 @@ func _redesign_battle() -> void:
     button.add_theme_stylebox_override("pressed",_style(Color("#633d28"),Color("#d8b575"),8))
     var ward_title: Label = get_node("WardText") as Label
     ward_title.add_theme_color_override("font_color",Color("#d3f6e2"))
+    # Darken just the painted combat illustration behind dynamic labels.
+    for node in get_children():
+        if node is ColorRect and node != get_node("Backdrop"):
+            var tint: ColorRect = node as ColorRect
+            if tint.position == Vector2(367,172) and tint.size == Vector2(474,274):
+                tint.color = Color(0.02,0.08,0.13,0.28)
     var stage: Control = COMBAT_FX.new()
     stage.name = "BattleFieldEffects"
     stage.position = Vector2(367,172)
@@ -208,6 +225,8 @@ func _refresh() -> void:
     ally_portrait.position = Vector2(394,260+(0.0 if motion_reduced else sin(visual_time*2.2+1.0)*2.0))
     art_fx.refresh_from_game(game,motion_reduced)
     _refresh_squad()
+    if game.region == "meadow" and _meadow_texture != null:
+        arena_art.texture = _meadow_texture
     for kind in art_portraits:
         var portrait: TextureRect = art_portraits[kind]
         portrait.visible = not bool(game.evolved[kind])
