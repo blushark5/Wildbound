@@ -23,8 +23,10 @@ func _verify() -> void:
     if screen.get_node_or_null("StageFlag") == null or screen.get_node_or_null("SquadStatus") == null:
         _die("Battle HUD has lost its labels")
         return
-    if screen.game.SAVE_FILE != "user://wildbound_incremental_reboot_v1.json":
-        _die("Existing progression save namespace unexpectedly altered")
+    # /visual/ deliberately uses a different save namespace from /reboot/.
+    var save_path: String = String(screen.game.SAVE_FILE)
+    if save_path != "user://wildbound_incremental_reboot_v1.json" and save_path != "user://wildbound_visual_review_v1.json":
+        _die("Unexpected save namespace for stable or visual sandbox")
         return
     if screen._active_creatures() != 1:
         _die("Expected only initial Spriglet at fresh save")
