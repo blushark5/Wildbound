@@ -4,6 +4,11 @@ on:
   push:
     branches: [main, develop]
   workflow_dispatch:
+  # Every validated incremental feature update refreshes the browser game.
+  workflow_run:
+    workflows: ["Wildbound creature incremental reboot"]
+    types: [completed]
+    branches: [feature/wildbound-creature-incremental-reboot]
 
 permissions:
   contents: read
@@ -16,6 +21,8 @@ concurrency:
 
 jobs:
   web:
+    # Only publish feature-branch changes after its full test workflow passes.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     name: Build Web and deploy Pages
     runs-on: ubuntu-latest
     environment:
@@ -79,13 +86,12 @@ jobs:
           godot --headless --path experimental --export-release "Web" "$RUNNER_TEMP/wildbound-site/dev/index.html"
           test -s "$RUNNER_TEMP/wildbound-site/dev/index.html"
 
-      # Separate playable creature-incremental reboot. The stable game and
-      # GBA development preview keep their existing URLs and save files.
+      # A verified feature commit automatically advances /reboot/. On a
+      # workflow_run, pin the exact SHA which passed feature CI.
       - name: Checkout Creature Ascension reboot
         uses: actions/checkout@v4
         with:
-          # Pinned to previously validated v0.4 while v0.5 artwork is in visual review.
-          ref: 4eb3f7ca75542f7e4fc053c39fac95b9c668ff82
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'feature/wildbound-creature-incremental-reboot' }}
           path: creature-reboot
 
       - name: Import reboot assets and validate Godot scripts
@@ -103,6 +109,9 @@ jobs:
       - name: Validate v0.4 masteries, combo, caches and save migration
         run: godot --headless --path creature-reboot --script res://tests/check_v04.gd
 
+      - name: Check v0.5 real sprites, painted UI and gameplay input
+        run: godot --headless --path creature-reboot --script res://tests/check_visual_v05.gd
+
       - name: Export creature reboot to /reboot/
         run: |
           mkdir -p "$RUNNER_TEMP/wildbound-site/reboot"
@@ -110,13 +119,14 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-site/reboot/index.html"
           test -s "$RUNNER_TEMP/wildbound-site/reboot/index.pck"
           test -s "$RUNNER_TEMP/wildbound-site/reboot/index.wasm"
+          printf 'Wildbound Creature Ascension\nSource: %s\n' "$(git -C creature-reboot rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/reboot/build-info.txt"
 
-      # Independent v0.5 presentation preview. Staged art changes must
-      # not overwrite the published /reboot/ game or its save profile.
+      # Isolated visual sandbox has the same tested art plus a separate
+      # project name and save path. Mobile players can test either URL.
       - name: Checkout visual review build
         uses: actions/checkout@v4
         with:
-          ref: feature/wildbound-creature-incremental-reboot
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'feature/wildbound-creature-incremental-reboot' }}
           path: visual-review
 
       - name: Separate visual-review browser saves
@@ -137,6 +147,7 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-site/visual/index.html"
           test -s "$RUNNER_TEMP/wildbound-site/visual/index.pck"
           test -s "$RUNNER_TEMP/wildbound-site/visual/index.wasm"
+          printf 'Wildbound Visual Sandbox\nSource: %s\n' "$(git -C visual-review rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/visual/build-info.txt"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
