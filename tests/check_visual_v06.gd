@@ -43,6 +43,14 @@ func _verify() -> void:
     if screen.unit_sprites[0].texture == null or screen.unit_sprites[1].texture == null:
         _die("Allied battle artwork wasn't imported")
         return
+    screen.game.select_region("meadow")
+    screen.call("_refresh")
+    if screen.arena_art.texture == null or screen.arena_art.texture.get_width() != 240:
+        _die("Real illustrated meadow art failed WebP decode")
+        return
+    if screen.art_portraits.size() != 3:
+        _die("Three new painted roster portraits were not decoded")
+        return
     if screen.enemy_portrait.material == null:
         _die("Enhanced original creature sprite shader missing")
         return
