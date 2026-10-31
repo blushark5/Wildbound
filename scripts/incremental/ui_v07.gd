@@ -23,6 +23,12 @@ func _move(name: String, pos: Vector2, bounds: Vector2) -> void:
         return
     node.position = pos
     node.size = bounds
+    if node is Panel:
+        for child in node.get_children():
+            if child is Control:
+                var decor: Control = child as Control
+                if decor.name == "OriginalWildboundBackdrop" or decor.name == "ReadableContentVeil":
+                    decor.size = bounds
 
 func _rebuild_hierarchy() -> void:
     _move("PackPane",Vector2(10,84),Vector2(247,558))
@@ -104,6 +110,16 @@ func _rebuild_hierarchy() -> void:
     _move("SquadStatus",Vector2(306,469),Vector2(230,20))
     _move("MobileHint",Vector2(890,633),Vector2(90,15))
     _move("Tap",Vector2(290,507),Vector2(704,43))
+    # Reposition the two unnamed bar backgrounds, as well as their fills.
+    for child in get_children():
+        if child is ColorRect:
+            var rect: ColorRect = child as ColorRect
+            if rect.position == Vector2(381,416) and rect.size == Vector2(444,14):
+                rect.position = Vector2(300,490)
+                rect.size = Vector2(690,14)
+            elif rect.position == Vector2(362,537) and rect.size == Vector2(480,18):
+                rect.position = Vector2(288,586)
+                rect.size = Vector2(704,18)
     _move("WardText",Vector2(288,562),Vector2(695,22))
     _move("WardBar",Vector2(290,587),Vector2(699,15))
     _move("DpsText",Vector2(288,607),Vector2(430,24))
