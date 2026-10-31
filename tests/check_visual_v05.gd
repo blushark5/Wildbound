@@ -28,8 +28,6 @@ func _verify() -> void:
         if (portraits[kind] as TextureRect).texture == null:
             _failure("Original creature asset not displayed " + kind)
             return
-    var ally: TextureRect = screen.get_node_or_null("AllyLead") as TextureRect
-    # AllyLead is a Label; illustration is exposed as a typed scene property.
     if screen.ally_portrait == null or screen.ally_portrait.texture == null:
         _failure("Actual original back-facing ally artwork missing")
         return
@@ -71,7 +69,5 @@ func _verify() -> void:
     if screen.game.enemy_hp >= hp_before and screen.game.wave <= 1:
         _failure("Styled STRIKE button has broken live combat")
         return
-    # Test never writes into a real player's browser save; test runner user:// only.
-    DirAccess.remove_absolute(ProjectSettings.globalize_path(screen.ENGINE.SAVE_FILE))
     print("PASS visual v0.5: illustrated header/cards, rear-view ally, evolved art, region scenes, functional upgrades and combat")
     quit(0)
