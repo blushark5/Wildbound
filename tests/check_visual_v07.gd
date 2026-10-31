@@ -85,6 +85,25 @@ func _verify() -> void:
     if not screen.arena_art.texture.resource_path.ends_with("battle_shore.png"):
         _die("Scenery isn't switched dynamically by region")
         return
+    # Every evolution is an independent transparent illustration.
+    var thornhart: Texture2D = screen.BATTLE_ART.get_creature("spriglet",true)
+    var tidemare: Texture2D = screen.BATTLE_ART.get_creature("brinlet",true)
+    var blazetail: Texture2D = screen.BATTLE_ART.get_creature("cindlet",true)
+    if thornhart == null or tidemare == null or blazetail == null or         thornhart.get_width() != 128 or tidemare.get_width() != 128 or blazetail.get_width() != 128:
+        _die("All three evolved illustrations must load independently of old placeholder sprites")
+        return
+    screen.game.evolved["spriglet"] = true
+    screen.game.levels["spriglet"] = 40
+    screen.call("_refresh")
+    if screen.ally_portrait.texture.get_width() != 128:
+        _die("A player's evolved creature must appear in actual combat art")
+        return
+    screen.game.wave = 10
+    screen.game._spawn_enemy()
+    screen.call("_refresh")
+    if screen.enemy_portrait.texture.get_width() != 128:
+        _die("Guardian must display its illustrated evolved species")
+        return
     screen.call("_switch_tab","PACK")
     if screen.right_rows.size() < 6:
         _die("All prior mastery controls must survive redesigned UI")
