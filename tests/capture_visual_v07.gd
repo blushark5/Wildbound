@@ -9,7 +9,18 @@ func _capture() -> void:
     var scene: PackedScene = load("res://scenes/incremental/wildbound_visual_v07.tscn") as PackedScene
     if scene == null:
         push_error("No v0.7 stage scene"); quit(1); return
-    viewport.add_child(scene.instantiate())
+    var screen: Control = scene.instantiate() as Control
+    viewport.add_child(screen)
+    # Representative mid-run battle for visually judging all three creatures.
+    # This staged state lives only in the disposable CI scene process.
+    screen.game.gold = 100000.0
+    screen.game.buy_levels("brinlet",4)
+    screen.game.buy_levels("cindlet",4)
+    screen.game.wave = 42
+    screen.game.best_wave = 42
+    screen.game._spawn_enemy()
+    screen.game._fit_enemy_to_region()
+    screen.call("_refresh")
     for i in range(12):
         await process_frame
     await RenderingServer.frame_post_draw
