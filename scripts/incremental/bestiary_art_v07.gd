@@ -1,35 +1,35 @@
 extends RefCounted
-## Three original independently masked transparent bestiary sprites.
-## Approved Wildbound concept illustration -> segmentation -> RGBA WebP.
-## Future evolutions will use authored forms; older battle art remains fallback.
-const PATH := "res://assets/incremental/v07_bestiary_atlas.webp.base64"
-const SPECIES_POS: Dictionary = {"spriglet":0,"brinlet":1,"cindlet":2}
+## Standalone original transparent creature art, with every evolutionary form
+## separately cut from the approved Wildbound bestiary (no screenshot UI).
+const STARTER := "res://assets/incremental/v07_bestiary_atlas.webp.base64"
+const EVOLVED := "res://assets/incremental/v07_evolved_bestiary.webp.base64"
+const POS: Dictionary = {"spriglet":0,"brinlet":1,"cindlet":2}
 static var loaded: bool = false
-static var textures: Dictionary = {}
+static var sprites: Dictionary = {}
+static var evolution_art: Dictionary = {}
 
-static func get_creature(kind: String) -> Texture2D:
+static func get_creature(kind: String, evolved: bool = false) -> Texture2D:
     if not loaded:
-        _load()
-    return textures.get(kind,null) as Texture2D
+        loaded = true
+        _load_sheet(STARTER,96,sprites)
+        _load_sheet(EVOLVED,128,evolution_art)
+    if evolved:
+        return evolution_art.get(kind,sprites.get(kind,null)) as Texture2D
+    return sprites.get(kind,null) as Texture2D
 
-static func _load() -> void:
-    loaded = true
-    if not FileAccess.file_exists(PATH):
-        push_warning("v0.7 original sprite atlas not found; falling back to old battle artwork")
+static func _load_sheet(path: String, cell: int, into: Dictionary) -> void:
+    if not FileAccess.file_exists(path):
+        push_warning("Creature illustration atlas missing: "+path)
         return
-    var text: String = FileAccess.get_file_as_string(PATH).strip_edges()
-    var binary: PackedByteArray = Marshalls.base64_to_raw(text)
-    if binary.is_empty():
-        push_warning("Unable to decode creature atlas base64")
+    var raw: PackedByteArray = Marshalls.base64_to_raw(FileAccess.get_file_as_string(path).strip_edges())
+    var picture := Image.new()
+    if raw.is_empty() or picture.load_webp_from_buffer(raw) != OK:
+        push_warning("Unable to decode creature illustration atlas "+path)
         return
-    var image := Image.new()
-    if image.load_webp_from_buffer(binary) != OK:
-        push_warning("Unable to load creature WebP")
+    if picture.get_width() != cell*3 or picture.get_height() != cell:
+        push_warning("Creature illustration atlas dimensions invalid: "+path)
         return
-    if image.get_width() != 288 or image.get_height() != 96:
-        push_warning("Unexpected sprite atlas size; skipping replacement")
-        return
-    for kind in SPECIES_POS:
-        var i: int = int(SPECIES_POS[kind])
-        var crop: Image = image.get_region(Rect2i(i*96,0,96,96))
-        textures[kind] = ImageTexture.create_from_image(crop)
+    for species in POS:
+        var idx: int = int(POS[species])
+        var crop: Image = picture.get_region(Rect2i(idx*cell,0,cell,cell))
+        into[species] = ImageTexture.create_from_image(crop)
