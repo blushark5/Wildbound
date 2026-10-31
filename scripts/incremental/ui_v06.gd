@@ -225,6 +225,17 @@ func _refresh() -> void:
     ally_portrait.position = Vector2(394,260+(0.0 if motion_reduced else sin(visual_time*2.2+1.0)*2.0))
     art_fx.refresh_from_game(game,motion_reduced)
     _refresh_squad()
+    # The base HUD used to overlap several explanations at the enemy HP bar.
+    # Keep damage feedback only when a hit occurs and move permanent details
+    # to tooltips / the bottom expedition summary.
+    if game.damage_flash <= 0.0:
+        damage_text.text = ""
+    labels["SquadStatus"].visible = false
+    labels["StageFlag"].position = Vector2(665,341)
+    labels["StageFlag"].add_theme_color_override("font_shadow_color",Color("#061621"))
+    labels["StageFlag"].add_theme_constant_override("shadow_offset_x",1)
+    labels["StageFlag"].add_theme_constant_override("shadow_offset_y",1)
+    mobile_hint.visible = false
     if game.region == "meadow" and _meadow_texture != null:
         arena_art.texture = _meadow_texture
     for kind in art_portraits:
