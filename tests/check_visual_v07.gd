@@ -62,6 +62,13 @@ func _verify() -> void:
     if screen.art_portraits.size() != 3:
         _die("Three new painted roster portraits were not decoded")
         return
+    var painted: Texture2D = screen.BATTLE_ART.get_creature("spriglet")
+    if painted == null or painted.get_width() != 96:
+        _die("Real transparent bestiary art did not decode")
+        return
+    if screen.ally_portrait.texture == null or screen.ally_portrait.texture.get_width() != 96:
+        _die("Actual battle still uses tiny placeholder creature sprites")
+        return
     if screen.enemy_portrait.material == null:
         _die("Enhanced original creature sprite shader missing")
         return
