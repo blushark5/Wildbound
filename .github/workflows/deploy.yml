@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Wildbound creature incremental reboot"]
     types: [completed]
-    branches: [feature/wildbound-creature-incremental-reboot]
+    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06]
 
 permissions:
   contents: read
@@ -91,7 +91,7 @@ jobs:
       - name: Checkout Creature Ascension reboot
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'feature/wildbound-creature-incremental-reboot' }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-creature-incremental-reboot' && github.event.workflow_run.head_sha || 'feature/wildbound-creature-incremental-reboot' }}
           path: creature-reboot
 
       - name: Import reboot assets and validate Godot scripts
@@ -126,7 +126,7 @@ jobs:
       - name: Checkout visual review build
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'feature/wildbound-creature-incremental-reboot' }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-art-and-ui-v06' && github.event.workflow_run.head_sha || 'feature/wildbound-art-and-ui-v06' }}
           path: visual-review
 
       - name: Separate visual-review browser saves
@@ -139,6 +139,9 @@ jobs:
 
       - name: Check illustrated UI, evolved poses, region scenes and live buttons
         run: godot --headless --path visual-review --script res://tests/check_visual_v05.gd
+
+      - name: Validate new v0.6 monster portraits, illustrated meadow and live combat
+        run: godot --headless --path visual-review --script res://tests/check_visual_v06.gd
 
       - name: Export visual study separately to /visual/
         run: |
