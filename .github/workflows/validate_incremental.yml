@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wildbound-v07-layout-review
-          path: Docs/QA/wildbound_visual_v07.png
+          path: Docs/QA/wildbound_visual_v07*.png
 
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
