@@ -5,6 +5,7 @@ extends "res://scripts/incremental/ui_v06.gd"
 ## All creature skills, click/auto combat, research, and autosaving still derive
 ## from the existing engine and working scene.
 
+const BATTLE_ART = preload("res://scripts/incremental/bestiary_art_v07.gd")
 const PLATE := Color("#102332")
 const EDGE := Color("#d2ab68")
 const LIGHT := Color("#edf5e5")
@@ -182,6 +183,20 @@ func _enhance_stage() -> void:
         label.add_theme_constant_override("shadow_offset_y",2)
     var bg: Panel = get_node("EnemyArena") as Panel
     bg.add_theme_stylebox_override("panel",_style(Color("#10202a"),Color("#dcbd80"),7))
+    # Replace the badly enlarged 24px prototype monsters with genuine,
+    # independent transparent artwork from the approved bestiary.
+    for kind in ENGINE.ORDER:
+        var painted: Texture2D = BATTLE_ART.get_creature(String(kind))
+        if painted == null:
+            continue
+        if art_portraits.has(kind):
+            var card_art: TextureRect = art_portraits[kind]
+            card_art.texture = painted
+            card_art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+        portraits[kind].texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+    enemy_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+    ally_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+    enemy_portrait.flip_h = true
     var strike: Button = buttons["Tap"]
     strike.add_theme_stylebox_override("normal",_style(Color("#90432b"),Color("#ffc67b"),9))
     strike.add_theme_stylebox_override("hover",_style(Color("#c45a35"),Color("#fff1ae"),9))
@@ -207,6 +222,41 @@ func _refresh() -> void:
     super._refresh()
     if game == null or art_fx == null:
         return
+    # Restore higher-resolution original creatures after the parent redraws
+    # the low-res placeholder sprites. Evolved forms retain old fallbacks
+    # until their own independent artwork is ready.
+    var leader: String = "spriglet"
+    var highest: float = -1.0
+    for candidate in ENGINE.ORDER:
+        if int(game.levels[candidate]) > 0:
+            var strength: float = game.species_damage(candidate) / game.attack_interval(candidate)
+            if strength > highest:
+                highest = strength
+                leader = String(candidate)
+        if not bool(game.evolved[candidate]):
+            var card_texture: Texture2D = BATTLE_ART.get_creature(String(candidate))
+            if card_texture != null and art_portraits.has(candidate):
+                var card: TextureRect = art_portraits[candidate]
+                card.texture = card_texture
+    if not bool(game.evolved[leader]):
+        var ally_texture: Texture2D = BATTLE_ART.get_creature(leader)
+        if ally_texture != null:
+            ally_portrait.texture = ally_texture
+    for i in range(2):
+        var sidekeys: Array[String] = []
+        for member in ENGINE.ORDER:
+            if String(member) != leader and int(game.levels[member]) > 0:
+                sidekeys.append(String(member))
+        if i < sidekeys.size() and not bool(game.evolved[sidekeys[i]]):
+            var side_art: Texture2D = BATTLE_ART.get_creature(sidekeys[i])
+            if side_art != null:
+                var sprite: TextureRect = unit_sprites[i]
+                sprite.texture = side_art
+                sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+    if not game.enemy_is_boss():
+        var foe_art: Texture2D = BATTLE_ART.get_creature(game.enemy_species)
+        if foe_art != null:
+            enemy_portrait.texture = foe_art
     # Base class sets old 480x270 screen positions each frame; enforce the
     # 704x332 battlefield and 3-aligned formation instead.
     enemy_portrait.position = Vector2(
