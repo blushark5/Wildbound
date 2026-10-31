@@ -4,6 +4,7 @@ extends "res://scripts/incremental/alpha_ui.gd"
 ## Inherits existing progression/controls: nothing is faked or screen-baked.
 
 const COMBAT_FX = preload("res://scripts/incremental/combat_fx_v06.gd")
+const ART_BANK = preload("res://scripts/incremental/portrait_bank_v06.gd")
 const SPRITE_SHADER = preload("res://assets/shaders/creature_rim_v06.gdshader")
 const SHADES: Dictionary = {
     "spriglet": Color("#90f2b3"),
@@ -11,6 +12,7 @@ const SHADES: Dictionary = {
     "cindlet": Color("#ffc17d")
 }
 var unit_sprites: Dictionary = {}
+var art_portraits: Dictionary = {}
 var unit_cached: Dictionary = {}
 var unit_names: Dictionary = {}
 var art_fx: Control
@@ -53,6 +55,21 @@ func _style_shell() -> void:
         portrait.position = Vector2(31,164+137.0*float(ENGINE.ORDER.find(creature)))
         portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
         portrait.material = _make_rim(SHADES[creature],0.78)
+        # Real raster portrait crops from the original concept sheet;
+        # fallback original creatures remain available after evolution.
+        var concept_texture: Texture2D = ART_BANK.portrait(creature)
+        if concept_texture != null:
+            var art := TextureRect.new()
+            art.name = "IllustratedPortrait_"+creature
+            art.position = portrait.position
+            art.size = Vector2(91,92)
+            art.texture = concept_texture
+            art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+            art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+            art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+            art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+            add_child(art)
+            art_portraits[creature] = art
         var title: Label = labels["name_"+creature]
         title.add_theme_color_override("font_color",SHADES[creature])
         var ability: Button = ally_skills[creature]
@@ -191,6 +208,10 @@ func _refresh() -> void:
     ally_portrait.position = Vector2(394,260+(0.0 if motion_reduced else sin(visual_time*2.2+1.0)*2.0))
     art_fx.refresh_from_game(game,motion_reduced)
     _refresh_squad()
+    for kind in art_portraits:
+        var portrait: TextureRect = art_portraits[kind]
+        portrait.visible = not bool(game.evolved[kind])
+        portrait.modulate = Color("#a7afb1") if int(game.levels[kind]) == 0 else Color.WHITE
     var rank: String = game.enemy_mutator()
     labels["StageFlag"].text = ("◆ "+rank.to_upper()) if rank != "" else ("◆ "+String(ENGINE.REGIONS[game.region]["name"]).to_upper())
     labels["SquadStatus"].text = "YOUR PACK • %d ACTIVE" % _active_creatures()
