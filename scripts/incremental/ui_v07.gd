@@ -222,41 +222,42 @@ func _refresh() -> void:
     super._refresh()
     if game == null or art_fx == null:
         return
-    # Restore higher-resolution original creatures after the parent redraws
-    # the low-res placeholder sprites. Evolved forms retain old fallbacks
-    # until their own independent artwork is ready.
+    # Render independent illustrated art for all SIX evolution stages.
+    # No UI or scenery is baked into any of these transparent sprites.
     var leader: String = "spriglet"
     var highest: float = -1.0
     for candidate in ENGINE.ORDER:
         if int(game.levels[candidate]) > 0:
-            var strength: float = game.species_damage(candidate) / game.attack_interval(candidate)
+            var strength: float = game.species_damage(candidate)/game.attack_interval(candidate)
             if strength > highest:
                 highest = strength
                 leader = String(candidate)
-        if not bool(game.evolved[candidate]):
-            var card_texture: Texture2D = BATTLE_ART.get_creature(String(candidate))
-            if card_texture != null and art_portraits.has(candidate):
-                var card: TextureRect = art_portraits[candidate]
-                card.texture = card_texture
-    if not bool(game.evolved[leader]):
-        var ally_texture: Texture2D = BATTLE_ART.get_creature(leader)
-        if ally_texture != null:
-            ally_portrait.texture = ally_texture
+        var card_texture: Texture2D = BATTLE_ART.get_creature(String(candidate),bool(game.evolved[candidate]))
+        if card_texture != null and art_portraits.has(candidate):
+            var card: TextureRect = art_portraits[candidate]
+            card.texture = card_texture
+            card.visible = true
+            card.modulate = Color("#9ca7af") if int(game.levels[candidate]) == 0 else (
+                Color("#dfc9ff") if bool(game.rare[candidate]) else Color.WHITE)
+    var ally_texture: Texture2D = BATTLE_ART.get_creature(leader,bool(game.evolved[leader]))
+    if ally_texture != null:
+        ally_portrait.texture = ally_texture
+        ally_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+    var sidekeys: Array[String] = []
+    for member in ENGINE.ORDER:
+        if String(member) != leader and int(game.levels[member]) > 0:
+            sidekeys.append(String(member))
     for i in range(2):
-        var sidekeys: Array[String] = []
-        for member in ENGINE.ORDER:
-            if String(member) != leader and int(game.levels[member]) > 0:
-                sidekeys.append(String(member))
-        if i < sidekeys.size() and not bool(game.evolved[sidekeys[i]]):
-            var side_art: Texture2D = BATTLE_ART.get_creature(sidekeys[i])
+        if i < sidekeys.size():
+            var side_art: Texture2D = BATTLE_ART.get_creature(sidekeys[i],bool(game.evolved[sidekeys[i]]))
             if side_art != null:
                 var sprite: TextureRect = unit_sprites[i]
                 sprite.texture = side_art
                 sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-    if not game.enemy_is_boss():
-        var foe_art: Texture2D = BATTLE_ART.get_creature(game.enemy_species)
-        if foe_art != null:
-            enemy_portrait.texture = foe_art
+    var foe_art: Texture2D = BATTLE_ART.get_creature(game.enemy_species,game.enemy_is_boss())
+    if foe_art != null:
+        enemy_portrait.texture = foe_art
+        enemy_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
     # Base class sets old 480x270 screen positions each frame; enforce the
     # 704x332 battlefield and 3-aligned formation instead.
     enemy_portrait.position = Vector2(
