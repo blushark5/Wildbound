@@ -78,6 +78,7 @@ func _rebuild_hierarchy() -> void:
     arena_art.position = Vector2(288,168)
     arena_art.size = Vector2(704,332)
     arena_art.modulate = Color(1,1,1,0.99)
+    arena_art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     arena_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
     if art_fx != null:
         art_fx.position = Vector2(288,168)
@@ -91,12 +92,13 @@ func _rebuild_hierarchy() -> void:
                 tint.position = Vector2(288,168)
                 tint.size = Vector2(704,332)
                 tint.color = Color("#071a22",0.19)
-    _move("EnemyName",Vector2(695,184),Vector2(286,27))
-    _move("EnemyHp",Vector2(672,456),Vector2(305,22))
-    _move("DamageText",Vector2(740,416),Vector2(236,28))
+    _move("EnemyName",Vector2(700,185),Vector2(284,25))
+    _move("EnemyHp",Vector2(704,210),Vector2(273,22))
+    labels["EnemyHp"].add_theme_font_size_override("font_size",12)
+    _move("DamageText",Vector2(753,421),Vector2(221,26))
     _move("ComboCounter",Vector2(537,428),Vector2(150,25))
-    enemy_portrait.position = Vector2(741,222)
-    enemy_portrait.size = Vector2(210,223)
+    enemy_portrait.position = Vector2(741,248)
+    enemy_portrait.size = Vector2(210,217)
     ally_portrait.position = Vector2(319,291)
     ally_portrait.size = Vector2(152,185)
     _move("AllyLead",Vector2(308,224),Vector2(285,24))
@@ -108,6 +110,7 @@ func _rebuild_hierarchy() -> void:
         fig.position = Vector2(445+float(i)*112,332+float(i)*7)
         fig.size = Vector2(145-float(i)*16,137-float(i)*6)
     _move("StageFlag",Vector2(746,378),Vector2(230,23))
+    labels["StageFlag"].visible = false
     _move("SquadStatus",Vector2(306,469),Vector2(230,20))
     _move("MobileHint",Vector2(890,633),Vector2(90,15))
     _move("Tap",Vector2(290,507),Vector2(704,43))
@@ -116,14 +119,17 @@ func _rebuild_hierarchy() -> void:
         if child is ColorRect:
             var rect: ColorRect = child as ColorRect
             if rect.position == Vector2(381,416) and rect.size == Vector2(444,14):
-                rect.position = Vector2(300,490)
-                rect.size = Vector2(690,14)
+                rect.position = Vector2(703,235)
+                rect.size = Vector2(279,14)
+            elif rect.position == Vector2(364,617) and rect.size == Vector2(262,12):
+                rect.position = Vector2(577,628)
+                rect.size = Vector2(233,12)
             elif rect.position == Vector2(362,537) and rect.size == Vector2(480,18):
                 rect.position = Vector2(288,586)
                 rect.size = Vector2(704,18)
     _move("WardText",Vector2(288,562),Vector2(695,22))
     _move("WardBar",Vector2(290,587),Vector2(699,15))
-    _move("DpsText",Vector2(288,607),Vector2(430,24))
+    _move("DpsText",Vector2(288,607),Vector2(285,24))
     _move("ArenaFooter",Vector2(288,631),Vector2(270,16))
     _move("ResonanceBar",Vector2(578,628),Vector2(229,12))
     _move("Resonance",Vector2(816,611),Vector2(176,32))
@@ -262,7 +268,7 @@ func _refresh() -> void:
     # 704x332 battlefield and 3-aligned formation instead.
     enemy_portrait.position = Vector2(
         741.0 + (sin(visual_time*38.0)*3.0 if game.damage_flash > 0.0 and not motion_reduced else 0.0),
-        222.0 + (0.0 if motion_reduced else sin(visual_time*2.2)*2.0))
+        248.0 + (0.0 if motion_reduced else sin(visual_time*2.2)*2.0))
     ally_portrait.position = Vector2(319.0,
         291.0 + (0.0 if motion_reduced else sin(visual_time*2.3)*2.0))
     for i in range(2):
@@ -272,8 +278,8 @@ func _refresh() -> void:
                 332+float(i)*7+(0.0 if motion_reduced else sin(visual_time*1.9+float(i))*2.0))
     # Full-width bars corresponding to the new readable HUD.
     var hp_ratio: float = clampf(game.enemy_hp/maxf(game.enemy_max_hp,1.0),0.0,1.0)
-    enemy_fill.position = Vector2(301,490)
-    enemy_fill.size = Vector2(687.0*hp_ratio,11)
+    enemy_fill.position = Vector2(705,237)
+    enemy_fill.size = Vector2(275.0*hp_ratio,11)
     var ward_ratio: float = clampf(game.ward/maxf(game.max_ward(),1.0),0.0,1.0)
     ward_fill.position = Vector2(290,587)
     ward_fill.size = Vector2(699.0*ward_ratio,14)
@@ -284,8 +290,17 @@ func _refresh() -> void:
     labels["MobileHint"].visible = false
     labels["ArenaFooter"].visible = false
     labels["StageFlag"].position = Vector2(746,378)
+    labels["StageFlag"].visible = false
     labels["PackFooter"].visible = true
     # Old caption can overlap the enemy health UI in v0.6.
+    for row in right_rows:
+        if row.get("mode","") == "module":
+            var upgrade_button: Button = row["button"]
+            upgrade_button.add_theme_stylebox_override("normal",
+                _style(Color("#256e50"),Color("#8fe5ad"),5))
+            upgrade_button.add_theme_stylebox_override("hover",
+                _style(Color("#309a67"),Color("#d0ffba"),5))
+            upgrade_button.add_theme_font_size_override("font_size",12)
     labels["DamageText"].text = (
         ("CRITICAL  " if game.recent_critical else "HIT  ")+game.format_number(game.recent_hit)
         if game.damage_flash > 0.0 else "")
