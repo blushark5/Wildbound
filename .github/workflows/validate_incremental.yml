@@ -31,6 +31,8 @@ jobs:
         run: timeout 60s godot --headless --path . --script res://tests/check_bond_v14.gd
       - name: Assert first-clear Essence, farming actions and all 12 sprite families
         run: timeout 60s godot --headless --path . --script res://tests/check_iteration_v15.gd
+      - name: Assert exact starter restoration and 18 painted expanded-species portraits
+        run: timeout 60s godot --headless --path . --script res://tests/check_painted_v16.gd
       - name: Validate polished illustrated world and full-screen Field Guide
         run: timeout 60s godot --headless --path . --script res://tests/check_visual_v13.gd
       - name: Validate four-element collection, distinct owned individuals and earned hatches
@@ -160,7 +162,8 @@ jobs:
           grep -aFq "arena_air.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "nest_egg.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "zephlet_attack.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "spriglet_evolved_attack.svg" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "new9_base.webp.base64" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "new9_evolved.webp.base64" /tmp/wildbound-idle-web/index.pck
           grep -aFq "gustling_evolved_idle.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "fx_fire.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "v07_evolved_bestiary.webp.base64" /tmp/wildbound-idle-web/index.pck
