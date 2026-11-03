@@ -51,7 +51,7 @@ func _verify() -> void:
     game._fit_enemy_to_region()
     game.levels["brinlet"] = 1
     game.levels["cindlet"] = 1
-    game.squad_slots = ["spriglet","brinlet","cindlet"]
+    game.squad_slots.assign(["spriglet","brinlet","cindlet"])
     game.awaiting_next = false
     game.initialize_squads()
     if game.roster_for(4) != ["spriglet","brinlet","cindlet"]:
@@ -74,7 +74,7 @@ func _verify() -> void:
     game.wave = 1
     game._spawn_enemy()
     game._fit_enemy_to_region()
-    game.squad_slots = ["spriglet","spriglet","spriglet"]
+    game.squad_slots.assign(["spriglet","spriglet","spriglet"])
     game.awaiting_next = false
     game.initialize_squads()
     var hp_before: float = float(game.rival_units[0]["hp"])
@@ -144,7 +144,7 @@ func _verify() -> void:
     ui.game.wave = 4
     ui.game._spawn_enemy()
     ui.game._fit_enemy_to_region()
-    ui.game.squad_slots = ["spriglet","brinlet","spriglet"]
+    ui.game.squad_slots.assign(["spriglet","brinlet","spriglet"])
     ui.game.initialize_squads()
     ui.call("_refresh")
     if not ui.rival_widgets[0]["target"].text.contains("Brinlet") and ui.game.rival_units[0]["target"] >= 0:
