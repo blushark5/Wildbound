@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Wildbound creature incremental reboot"]
     types: [completed]
-    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09, feature/wildbound-challenge-loop-v10, feature/wildbound-live-squads-v11, feature/wildbound-unique-collection-v12]
+    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09, feature/wildbound-challenge-loop-v10, feature/wildbound-live-squads-v11, feature/wildbound-unique-collection-v12, feature/wildbound-visual-world-v13]
 
 permissions:
   contents: read
@@ -291,6 +291,37 @@ jobs:
           grep -aFq "zephlet.svg" "$RUNNER_TEMP/wildbound-site/collection/index.pck"
           grep -aFq "skyray.svg" "$RUNNER_TEMP/wildbound-site/collection/index.pck"
           printf 'Wildbound Unique Collection v0.12\nSource: %s\n' "$(git -C collection-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/collection/build-info.txt"
+
+      # Original illustrated world v0.13; keep earlier builds and saves untouched.
+      - name: Checkout tested v0.13 illustrated Field Guide
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-visual-world-v13' && github.event.workflow_run.head_sha || 'feature/wildbound-visual-world-v13' }}
+          path: world-preview
+
+      - name: Give v0.13 its own independent browser save
+        run: |
+          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_visual_world_v13_preview_v1.json/g' world-preview/scripts/incremental/engine.gd
+
+      - name: Validate actual Field Guide, Gold/Essence separation and squad controls
+        run: |
+          godot --headless --path world-preview --editor --import --quit
+          godot --headless --path world-preview --script res://tests/check_visual_v13.gd
+          godot --headless --path world-preview --script res://tests/check_collection_v12.gd
+
+      - name: Export standalone illustrated v0.13 game to /world/
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/world"
+          godot --headless --path world-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/world/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/world/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/world/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/world/index.wasm"
+          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/world/index.pck"
+          grep -aFq "zephlet.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
+          grep -aFq "arena_earth.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
+          grep -aFq "arena_air.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
+          grep -aFq "nest_egg.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
+          printf 'Wildbound Visual World v0.13\nSource: %s\n' "$(git -C world-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/world/build-info.txt"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
