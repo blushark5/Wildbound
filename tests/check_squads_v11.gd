@@ -10,6 +10,7 @@ func _fail(reason: String) -> void:
     quit(1)
 
 func _verify() -> void:
+    print("V11 phase: engine")
     var game = ENGINE.new()
     game.initialize_alpha()
     game.initialize_squads()
@@ -119,8 +120,10 @@ func _verify() -> void:
     if not game.auto_advance_unlocked():
         _fail("The v0.10 late-game auto-advance unlock was lost");return
 
+    print("V11 phase: scene")
     var ui: Control = SCENE.instantiate() as Control
     root.add_child(ui)
+    print("V11 phase: scene entered tree")
     if ui.ally_widgets.size() != 3 or ui.rival_widgets.size() != 3:
         _fail("The actual scene does not render three fighters on each side");return
     for index in range(3):
