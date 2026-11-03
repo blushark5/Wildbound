@@ -144,6 +144,13 @@ func _install_world_skin() -> void:
     screen_labels["EnemyName"].add_theme_font_size_override("font_size",16)
     screen_labels["EncounterHint"].add_theme_font_size_override("font_size",10)
     screen_labels["EncounterHint"].size.x = 530.0
+    # Short-lived notifications belong in the clear HUD strip, never across
+    # the creature portraits. This also keeps mobile-scaled text readable.
+    screen_labels["Toast"].position = Vector2(38,151)
+    screen_labels["Toast"].size = Vector2(510,17)
+    screen_labels["Toast"].add_theme_font_size_override("font_size",11)
+    screen_labels["Toast"].add_theme_color_override("font_color",Color("#f6dca2"))
+
     screen_labels["DamageReadout"].add_theme_font_size_override("font_size",12)
     screen_labels["FieldStatus"].add_theme_font_size_override("font_size",11)
     screen_labels["PackDps"].add_theme_font_size_override("font_size",11)
@@ -229,6 +236,7 @@ func _install_world_skin() -> void:
     type_key = _label("TypeCycleHint","EARTH  >  WATER  >  FIRE  >  AIR  >  EARTH",
         Rect2(192,386,466,13),10,Color("#c9e7db"))
     type_key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    type_key.visible = false
     get_node("Notification").add_theme_color_override("font_color",Color("#819eab"))
     _polish_sidebar_rows()
 
@@ -315,6 +323,10 @@ func _refresh() -> void:
     screen_labels["TrailRank"].text = "CHAPTER %02d / %02d" % [
         mini(game.trail_rank+1,game.COLLECTION_TRAIL.size()),game.COLLECTION_TRAIL.size()]
     screen_labels["PackDps"].text = "%d / 3 UNIQUE ACTIVE" % game.occupied_slots()
+    screen_labels["EncounterHint"].text = "LIVE 3v3  •  SMART ELEMENTAL TARGETING"
+    var toast_label: Label = screen_labels["Toast"]
+    if toast_label.text.length() > 66:
+        toast_label.text = toast_label.text.substr(0,62)+"…"
     collect_button.text = "FIELD GUIDE  %d/12" % game.collection_count()
     screen_labels["Shards"].text = "%d / %d" % [game.essence,game.hatch_cost()]
     screen_labels["Gold"].text = game.format_number(game.gold)
@@ -600,7 +612,7 @@ func _refresh_codex() -> void:
             card.add_theme_stylebox_override("panel",_glass(
                 Color("#142d38"),Color("#33525b"),12,1))
             artwork.texture = COLLECTION_ART.get_creature(String(key),false)
-            artwork.modulate = Color("#365360",0.47)
+            artwork.modulate = Color("#547b88",0.57)
             name.text = "???  •  UNDISCOVERED"
             trait_label.text = String(COLLECTION_ENGINE.CATALOG[key]["element"]).to_upper()+"  •  UNKNOWN TRAITS"
             status.text = "WAITING IN THE WILDS"
