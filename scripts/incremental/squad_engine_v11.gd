@@ -41,6 +41,9 @@ func combat_damage(kind: String) -> float:
 func combat_interval(kind: String) -> float:
     return attack_interval(kind)
 
+func combat_enemy_interval(kind: String) -> float:
+    return float(combat_meta(kind).get("interval",1.0))
+
 func combat_name(kind: String) -> String:
     return species_name(kind)
 
@@ -357,7 +360,7 @@ func tick(delta: float) -> void:
         if float(unit["hp"]) <= 0.0:
             continue
         unit["clock"] = float(unit["clock"])+dt
-        var interval: float = maxf(0.65,combat_interval(String(unit["kind"]))*1.9)
+        var interval: float = maxf(0.65,combat_enemy_interval(String(unit["kind"]))*1.9)
         if float(unit["clock"]) >= interval:
             unit["clock"] = float(unit["clock"])-interval
             _rival_hit(i)
