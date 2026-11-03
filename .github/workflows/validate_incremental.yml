@@ -1,13 +1,13 @@
 name: Wildbound creature incremental reboot
 on:
   push:
-    branches: [feature/wildbound-battle-experience-v08]
+    branches: [feature/wildbound-journey-rebuild-v09]
   workflow_dispatch:
 
 # Each feature-branch commit triggers validation; obsolete queued runs should
 # never consume runners or delay the latest vetted game build.
 concurrency:
-  group: wildbound-v08-battle-experience-validation
+  group: wildbound-v09-journey-validation
   cancel-in-progress: true
 
 permissions:
@@ -58,6 +58,16 @@ jobs:
         with:
           name: wildbound-v08-battle-experience-qa
           path: Docs/QA/wildbound_visual_v08*.png
+
+      - name: Validate real journey milestones, creature purchases, legacy systems
+        run: godot --headless --path . --script res://tests/check_journey_v09.gd
+      - name: Capture v0.9 opening journey and Guardian battle
+        run: xvfb-run -a godot --path . --script res://tests/capture_journey_v09.gd
+      - name: Archive rendered v0.9 gameplay for design approval
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v09-real-screenshots
+          path: Docs/QA/wildbound_journey_v09*.png
 
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
