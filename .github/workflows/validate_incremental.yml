@@ -1,13 +1,13 @@
 name: Wildbound creature incremental reboot
 on:
   push:
-    branches: [feature/wildbound-journey-rebuild-v09]
+    branches: [feature/wildbound-challenge-loop-v10]
   workflow_dispatch:
 
 # Each feature-branch commit triggers validation; obsolete queued runs should
 # never consume runners or delay the latest vetted game build.
 concurrency:
-  group: wildbound-v09-journey-validation
+  group: wildbound-v10-challenge-validation
   cancel-in-progress: true
 
 permissions:
@@ -69,6 +69,16 @@ jobs:
           name: wildbound-v09-real-screenshots
           path: Docs/QA/wildbound_journey_v09*.png
 
+      - name: Validate real challenge loop and creature mechanics
+        run: godot --headless --path . --script res://tests/check_challenge_v10.gd
+      - name: Render actual combat, Guardian and stage-choice screenshots
+        run: xvfb-run -a godot --path . --script res://tests/capture_challenge_v10.gd
+      - name: Archive real v0.10 gameplay screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v10-real-gameplay
+          path: Docs/QA/wildbound_v10_*.png
+
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
       - name: Capture actual rendered scene for visual review
@@ -101,6 +111,8 @@ jobs:
           test -s /tmp/wildbound-idle-web/index.html
           test -s /tmp/wildbound-idle-web/index.wasm
           test -s /tmp/wildbound-idle-web/index.pck
+          grep -aFq "v07_bestiary_atlas.webp.base64" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "v07_evolved_bestiary.webp.base64" /tmp/wildbound-idle-web/index.pck
       - name: Upload browser-playable build without replacing Pages
         uses: actions/upload-artifact@v4
         with:
