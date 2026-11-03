@@ -106,6 +106,7 @@ func _refresh() -> void:
     if not squad_display_ready or game == null or not game.has_method("rival_alive"):
         return
     var cleared: bool = bool(game.awaiting_next)
+    var wiped: bool = cleared and String(game.last_clash).begins_with("SQUAD DEFEATED")
     var ally_count: int = game.ally_alive()
     var rival_count: int = game.rival_alive()
     var guardian: bool = game.enemy_is_boss()
@@ -113,18 +114,24 @@ func _refresh() -> void:
     rival_title.text = "GUARDIAN TRAINER   %d / 3" % rival_count if guardian else "RIVAL TEAM   %d / 3" % rival_count
     screen_labels["EnemyName"].text = "THREE-ON-THREE BATTLE"
     screen_labels["EnemyHp"].text = "%d rivals standing  •  %s HP total" % [rival_count,game.format_number(game.enemy_hp)]
-    screen_labels["EncounterHint"].text = ("TRAINER DEFEATED! NEXT STAGE OR FARM" if cleared else
+    screen_labels["EncounterHint"].text = ("SQUAD WIPED • RETRY OR FARM AND COUNTER THE RIVAL" if wiped else
+        "TRAINER DEFEATED! NEXT STAGE OR FARM" if cleared else
         "YOUR TEAM AUTO-TARGETS ELEMENTAL COUNTERS  •  2x STRONG / 0.45x WEAK")
     screen_labels["FieldStatus"].text = "YOUR SQUAD HP %s / %s   •   STAGE THREAT %.1fx" % [
         game.format_number(game.ward),game.format_number(game.party_max_hp()),game.challenge_multiplier()]
     ward_bar.size.x = 784.0*clampf(game.ward/game.party_max_hp(),0.0,1.0)
     screen_labels["PackDps"].text = ("3 SLOTS • EACH COPY FIGHTS INDEPENDENTLY • MATCHUP DPS "+game.format_number(game.squad_dps()))
-    screen_labels["DamageReadout"].text = ("TRAINER CLEARED • CHOOSE NEXT" if cleared else
+    screen_labels["DamageReadout"].text = ("SQUAD DEFEATED • REBUILD YOUR LINEUP" if wiped else
+        "TRAINER CLEARED • CHOOSE NEXT" if cleared else
         "ALIVE: %d vs %d  •  TEAM DPS %s" % [ally_count,rival_count,game.format_number(game.squad_dps())])
-    if cleared:
+    if wiped:
+        squad_status.text = "RETRY\nOR\nFARM"
+    elif cleared:
         squad_status.text = "NEXT\nOR\nFARM"
     else:
         squad_status.text = "VS\n2x COUNTER\n0.45x WEAK"
+    if wiped:
+        strike_button.text = "RETRY STAGE  ▶"
     for i in range(3):
         var my: Dictionary = game.ally_units[i]
         var foe: Dictionary = game.rival_units[i]
