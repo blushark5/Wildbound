@@ -60,6 +60,10 @@ func _refresh() -> void:
         card_art[ckey].tooltip_text = "%s • %s • %s. Three evolutionary forms keep the same body family." % [
             game.family_of(kind),String(ENGINE_18.CATALOG[kind]["element"]),String(ENGINE_18.LINES[kind][3])]
     for i in range(3):
+        var ally: Dictionary = game.ally_units[i]
+        var ally_kind: String = String(ally.get("kind",""))
+        if ally_kind != "":
+            ally_widgets[i]["name"].text = game.display_name(ally_kind,2 if game.unit_ascended(ally_kind) else (1 if game.unit_evolved(ally_kind) else 0))
         var unit: Dictionary = game.rival_units[i]
         var enemy_kind: String = String(unit.get("kind",""))
         if enemy_kind != "":
@@ -89,6 +93,6 @@ func _show_first_steps() -> void:
         +"Four elements form a circle: EARTH beats WATER, WATER beats FIRE, FIRE beats AIR, and AIR beats EARTH. Your three creatures automatically choose favorable targets; bad matchups can be overcome by farming Gold and Bond XP.\n\n"
         +"Each stage generates a random opponent team that STAYS THE SAME on reload, retry and farming. ASCENDING rerolls future opponents while keeping your collection, traits, Genes, evolution and Bond Ranks. Guardians still appear every ten stages.\n\n"
         +"Your first EARNED hatch is only 5 Essence regardless of receiving three starters. Each egg guarantees a NEW creature; the first tends to supply your missing fourth element. Essence comes ONLY from the first-ever clear of a stage number (+1 normally, +4 Guardian), NEVER farming or replayed Ascension stages.\n\n"
-        +"GOLD levels individuals to the ceiling permitted by their BOND RANK, or buys unlimited general upgrades. Bond XP grows through battles; Ascension raises prepared Bonds. Personal evolved art unlocks normally; its Ascended artwork shows at Bond Rank 3 after evolution."
+        +"GOLD levels individuals to the ceiling permitted by their BOND RANK, or buys unlimited general upgrades. Bond XP grows through battles; Ascension raises prepared Bonds. Personal evolved art unlocks normally; its Ascended artwork shows at Bond Rank 4 after evolution."
     )
     guide_dialog.popup_centered_ratio(0.78)
