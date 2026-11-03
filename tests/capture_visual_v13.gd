@@ -20,7 +20,7 @@ func _capture() -> void:
     root.add_child(viewport)
     var ui: Control = SCENE.instantiate() as Control
     viewport.add_child(ui)
-    ui.playing = false
+    ui.playing = true
     ui.guide_dialog.hide()
     ui.game.onboarding_seen = true
     ui.call("_refresh")
