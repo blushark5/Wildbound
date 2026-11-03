@@ -224,8 +224,8 @@ func _refresh_sidebar() -> void:
             "NEED GOLD" if int(quote["count"]) == 0 else "CAN'T BUY x%d" % bulk_amount)
         var amount: int = int(quote["count"])
         button.tooltip_text = ("Buy %d rank%s of %s for %s Gold.\n" %
-            [amount,"s" if amount != 1 else "",String(ENGINE.MODULE_NAMES[kind]),game.format_number(float(quote["cost"]))])
-            +String(upgrade_breakdown(kind)["details"])
+            [amount,"s" if amount != 1 else "",String(ENGINE.MODULE_NAMES[kind]),game.format_number(float(quote["cost"]))]
+            +String(upgrade_breakdown(kind)["details"]))
 
 func _refresh() -> void:
     super._refresh()
