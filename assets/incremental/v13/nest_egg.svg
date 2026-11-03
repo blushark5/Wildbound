@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="170" height="188" viewBox="0 0 170 188">
+<defs><radialGradient id="g" cx=".32" cy=".25" r=".9"><stop stop-color="#f5ffe4"/><stop offset=".4" stop-color="#a8e5c9"/><stop offset="1" stop-color="#2c6a7e"/></radialGradient><radialGradient id="halo"><stop stop-color="#a4e8d1" stop-opacity=".50"/><stop offset="1" stop-color="#a4e8d1" stop-opacity="0"/></radialGradient></defs>
+<circle cx="85" cy="96" r="83" fill="url(#halo)"/>
+<path d="M85 23Q123 21 143 83Q169 161 86 171Q4 161 27 83Q47 23 85 23Z" fill="url(#g)" stroke="#e9f6cb" stroke-width="4"/>
+<path d="M56 56 85 41 111 60 129 91 116 115 85 125 51 111 42 81Z" fill="none" stroke="#24596e" stroke-width="3" opacity=".43"/>
+<path d="M78 35 69 68 91 93 71 121 88 155M125 76 108 89 118 113" fill="none" stroke="#efffe3" stroke-width="4" opacity=".72"/>
+<circle cx="64" cy="77" r="8" fill="#ebffe2" opacity=".58"/>
+<path d="M57 37q24-19 45-2" fill="none" stroke="#fff" stroke-width="6" opacity=".44" stroke-linecap="round"/>
+<g fill="#e8ffda"><path d="M15 42 19 30 23 42 34 47 22 52 19 65 15 52 4 47Z"/><path d="M148 48 152 38 156 48 167 52 156 56 152 67 148 56 137 52Z"/></g>
+</svg>
