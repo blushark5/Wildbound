@@ -324,7 +324,10 @@ func trail_progress() -> int:
         "guardian":
             return last_boss_wave
         "level":
-            return maxi(unit_level("spriglet"),15 if owned_creatures.values().any(func(item: Dictionary) -> bool: return bool(item["evolved"])) else 0)
+            var strongest: int = unit_level("spriglet")
+            for key in owned_creatures:
+                strongest = maxi(strongest,15 if bool(owned_creatures[key]["evolved"]) else 0)
+            return strongest
         "air":
             for key in owned_creatures:
                 if String(CATALOG[key]["element"]) == "Air":
