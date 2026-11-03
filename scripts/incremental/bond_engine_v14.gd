@@ -105,6 +105,16 @@ func ascend() -> bool:
         ascensions,promoted.size()])
     return true
 
+func trail_info() -> Dictionary:
+    var entry: Dictionary = super.trail_info()
+    if String(entry.get("kind","")) == "level":
+        var adjusted: Dictionary = entry.duplicate()
+        adjusted["name"] = "First Bond Mastery"
+        adjusted["hint"] = "Train your first partner to level 8, the initial Bond Rank ceiling. Push toward stage 20 to Ascend and unlock higher individual levels."
+        adjusted["target"] = FIRST_CAP
+        return adjusted
+    return entry
+
 func to_dict() -> Dictionary:
     var saved: Dictionary = super.to_dict()
     saved["v14_bond_ranks"] = bond_ranks.duplicate()
