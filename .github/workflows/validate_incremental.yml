@@ -35,6 +35,8 @@ jobs:
         run: timeout 60s godot --headless --path . --script res://tests/check_painted_v16.gd
       - name: Validate v0.18 random starters, stage seeds, three-form art, Essence and legacy saves
         run: timeout 90s godot --headless --path . --script res://tests/check_roster_v18.gd
+      - name: Validate v0.19 new game, 3 save slots, explicit first battle, Ascension access
+        run: timeout 90s godot --headless --path . --script res://tests/check_saves_v19.gd
       - name: Validate polished illustrated world and full-screen Field Guide
         run: timeout 60s godot --headless --path . --script res://tests/check_visual_v13.gd
       - name: Validate four-element collection, distinct owned individuals and earned hatches
@@ -120,6 +122,14 @@ jobs:
       - name: Print compact real-game art thumbnails for visual QA
         run: xvfb-run -a godot --path . --script res://tests/preview_visual_v13.gd
 
+      - name: Render v0.19 real start gate, save manager, and Ascension shortcut
+        run: xvfb-run -a godot --path . --script res://tests/capture_saves_v19.gd
+      - name: Archive v0.19 genuine menu and first-battle UX screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v19-saves-and-first-battle
+          path: Docs/QA/wildbound_v19_*.png
+
       - name: Capture new v0.18 twelve-line team, guardian, mythic artwork and Field Guide
         run: xvfb-run -a godot --path . --script res://tests/capture_roster_v18.gd
       - name: Archive full real v0.18 art and stage screenshot review
@@ -177,6 +187,8 @@ jobs:
           grep -aFq "v18/base.webp.base64" /tmp/wildbound-idle-web/index.pck
           grep -aFq "v18/evolved.webp.base64" /tmp/wildbound-idle-web/index.pck
           grep -aFq "v18/ascended.webp.base64" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "save_slots_v19.gd" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "bond_ui_v19.gd" /tmp/wildbound-idle-web/index.pck
           grep -aFq "gustling_evolved_idle.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "fx_fire.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "v07_evolved_bestiary.webp.base64" /tmp/wildbound-idle-web/index.pck
