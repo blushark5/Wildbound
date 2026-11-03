@@ -218,6 +218,11 @@ func _refresh() -> void:
     _refresh_sidebar()
 
 func _update_unit(visual: Dictionary,unit: Dictionary,enemy: bool,index: int) -> void:
+    # The inherited squad screen briefly uses the legacy engine during
+    # Control._ready. Its creatures don't have personal collection methods.
+    if game == null or not game.has_method("collection_count"):
+        super._update_unit(visual,unit,enemy,index)
+        return
     var kind: String = String(unit["kind"])
     var alive: bool = float(unit["hp"]) > 0.0
     var art: TextureRect = visual["portrait"]
