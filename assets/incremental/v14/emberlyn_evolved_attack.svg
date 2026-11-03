@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 128 128">
+<defs><linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3bd7a"/><stop offset="0.56" stop-color="#d76a52"/><stop offset="1" stop-color="#d76a52"/></linearGradient><radialGradient id="power" cx=".50" cy=".47" r=".55"><stop offset="0" stop-color="#fff0a2" stop-opacity=".35"/><stop offset="1" stop-color="#f48b5a" stop-opacity="0"/></radialGradient></defs>
+<ellipse cx="65" cy="68" rx="58" ry="56" fill="url(#power)"/>
+
+<ellipse cx="65" cy="117" rx="42" ry="7" fill="#183342" opacity="0.13"/>
+<g transform="translate(7 -5) rotate(-7 65 76)">
+
+<path d="M32 88 Q35 59 51 46 L35 19 62 41 Q81 38 90 50 L107 20 103 71 Q110 97 77 102 L46 103Z" fill="url(#body)" stroke="#84474d" stroke-width="5"/><path d="M37 75 Q12 61 18 46 Q7 62 16 79 Q31 95 46 96" fill="#f2b75c" stroke="#9a4549" stroke-width="4"/><path d="M33 72 Q4 57 21 31 Q21 52 39 55" fill="#f5df8b"/><path d="M78 97 Q97 119 116 98 Q101 93 113 77 Q96 72 88 90" fill="#f0a658" stroke="#995052" stroke-width="4"/><path d="M48 98 42 111 60 113 67 102M78 100 84 112 102 109 93 95" stroke="#a64d48" stroke-width="6" fill="none"/><path d="M53 42 44 28 59 44" fill="#ffe4a6"/>
+<ellipse cx="65" cy="70" rx="6" ry="7" fill="#f8fcff"/><ellipse cx="66" cy="70" rx="3" ry="5" fill="#7b3837"/><circle cx="66.5" cy="68" r="1.7" fill="#ffffff"/>
+<path d="M74 81q6 5 11 -1" stroke="#7b3837" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+<path d="M42 69Q61 59 79 70" fill="none" stroke="#ffdc9e" stroke-width="3"/><path d="M87 84Q106 104 115 84" fill="none" stroke="#ffe9a6" stroke-width="3"/>
+<path d="M42 43Q30 28 39 12Q49 28 62 19Q73 7 83 9Q82 30 100 36L88 48" fill="#ffc075" stroke="#d8734a" stroke-width="3"/>
+</g>
+<path d="M9 112Q-2 79 24 67Q12 89 34 89M99 93Q120 75 111 51Q132 70 120 102" fill="#ffaa62" stroke="#ffe3a2" stroke-width="3"/><path d="m15 44 7-25 10 24m70-3 9-27 8 27" fill="#ffe8a9"/>
+<g fill="#fff0a2" opacity=".76"><path d="m22 39 4-11 4 11 11 4-11 4-4 10-4-10-11-4Z"/><path d="m105 45 4-11 4 11 10 4-10 4-4 11-4-11-10-4Z"/></g>
+</svg>
