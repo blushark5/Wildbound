@@ -12,7 +12,7 @@ func _ready() -> void:
     game.notice.connect(_on_notice)
     last_kills = game.kills
     last_guardian = game.last_boss_wave
-    screen_labels["Tagline"].text = "12 FAMILIES • COLLECT • BOND • ASCEND"
+    screen_labels["Tagline"].text = "12 ELEMENTAL LINES • BOND • ASCEND"
     screen_labels["PackHeader"].text = "YOUR WILD SQUAD"
     collect_button.tooltip_text = "A new save starts with a random Fox, Bird and Lizard across three elements; eggs grant new species without duplicates."
     _switch_tab("GROW")
