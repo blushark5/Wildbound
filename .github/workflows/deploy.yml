@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Wildbound creature incremental reboot"]
     types: [completed]
-    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09, feature/wildbound-challenge-loop-v10, feature/wildbound-live-squads-v11]
+    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09, feature/wildbound-challenge-loop-v10, feature/wildbound-live-squads-v11, feature/wildbound-unique-collection-v12]
 
 permissions:
   contents: read
@@ -263,6 +263,34 @@ jobs:
           grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/squads/index.pck"
           grep -aFq "v07_evolved_bestiary.webp.base64" "$RUNNER_TEMP/wildbound-site/squads/index.pck"
           printf 'Wildbound Live Squads v0.11\nSource: %s\n' "$(git -C squads-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/squads/build-info.txt"
+
+      # Unique earned collection v0.12, deliberately isolated from v0.11 saves.
+      - name: Checkout validated v0.12 unique collection
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-unique-collection-v12' && github.event.workflow_run.head_sha || 'feature/wildbound-unique-collection-v12' }}
+          path: collection-preview
+
+      - name: Keep collectible creatures and saves independent
+        run: |
+          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_unique_collection_v12_preview_v1.json/g' collection-preview/scripts/incremental/engine.gd
+
+      - name: Import and validate actual earned-only collection and four elements
+        run: |
+          godot --headless --path collection-preview --editor --import --quit
+          godot --headless --path collection-preview --script res://tests/check_collection_v12.gd
+
+      - name: Publish separate browser game to /collection/
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/collection"
+          godot --headless --path collection-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/collection/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/collection/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/collection/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/collection/index.wasm"
+          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/collection/index.pck"
+          grep -aFq "zephlet.svg" "$RUNNER_TEMP/wildbound-site/collection/index.pck"
+          grep -aFq "skyray.svg" "$RUNNER_TEMP/wildbound-site/collection/index.pck"
+          printf 'Wildbound Unique Collection v0.12\nSource: %s\n' "$(git -C collection-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/collection/build-info.txt"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
