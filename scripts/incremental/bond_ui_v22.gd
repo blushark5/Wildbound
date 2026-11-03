@@ -46,12 +46,15 @@ func _toggle_autoform() -> void:
         _refresh()
 
 func _install_matchup_ui() -> void:
+    # Keep the small battlefield free of overlay text. The compact
+    # comparison button sits between Farm Stage and the rival header.
     matchup_label = _label("CounterSummary","",
         Rect2(39,183,440,24),12,PALETTE["sage"])
+    matchup_label.hide()
     matchup_button = _button("MatchupDetails","MATCHUPS",
-        Rect2(445,104,100,30),_show_matchups,Color("#98e1b7"))
+        Rect2(545,104,110,30),_show_matchups,Color("#98e1b7"))
     _skin_button(matchup_button,PALETTE["sage"],true)
-    matchup_button.add_theme_font_size_override("font_size",11)
+    matchup_button.add_theme_font_size_override("font_size",10)
     matchup_button.tooltip_text = "See your entire squad's real elemental advantages versus all three opponents."
     matchup_dialog = AcceptDialog.new()
     matchup_dialog.title = "Your Elemental Matchups"
@@ -262,7 +265,9 @@ func _refresh() -> void:
             neutral += 1
     matchup_label.text = "YOUR MATCHUPS  •  %d STRONG   %d EVEN   %d WEAK" % [
         favorable,neutral,resisted]
-    matchup_label.tooltip_text = "Counts the best target for each of your three allies. Tap MATCHUPS for each opponent."
+    matchup_button.text = "MATCH %d+ %d-" % [favorable,resisted]
+    matchup_button.tooltip_text = "%d strong, %d neutral, %d weak. Tap for each creature-versus-enemy matchup." % [
+        favorable,neutral,resisted]
 
 func _refresh_codex() -> void:
     super._refresh_codex()
