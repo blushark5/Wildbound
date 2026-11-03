@@ -15,7 +15,7 @@ func _verify() -> void:
         _fail("Core battle and clearly signposted journey are missing"); return
     if ui.get_node_or_null("PackPanel") == null or ui.get_node_or_null("SidebarPanel") == null:
         _fail("Clean independent pack/progression hierarchy missing"); return
-    if ui.get_node_or_null("PackCard_spriglet") == null or ui.get_node_or_null("SidebarCards") == null:
+    if ui.get_node_or_null("PackCard_spriglet") == null or ui.get_node_or_null("SidebarScroll/SidebarCards") == null:
         _fail("Creature cards or contextual sidebar missing"); return
     if ui.get_node_or_null("PackCard_cindlet") == null:
         _fail("All three distinct creatures must remain accessible"); return
