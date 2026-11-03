@@ -187,10 +187,10 @@ func _refresh_codex() -> void:
         if not owned:
             continue
         var name: Label = entry["name"]
-        var trait: Label = entry["trait"]
+        var trait_label: Label = entry["trait"]
         var status: Label = entry["status"]
         name.add_theme_font_size_override("font_size",14)
-        trait.text = "%s  •  LV %d/%d" % [
+        trait_label.text = "%s  •  LV %d/%d" % [
             game.unit_trait(String(kind)).to_upper(),game.unit_level(String(kind)),game.bond_level_cap(String(kind))]
         var slot: int = game.squad_slots.find(String(kind))
         status.text = "BOND %d  •  %s" % [
