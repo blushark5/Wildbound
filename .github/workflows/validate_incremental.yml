@@ -1,13 +1,13 @@
 name: Wildbound creature incremental reboot
 on:
   push:
-    branches: [feature/wildbound-challenge-loop-v10]
+    branches: [feature/wildbound-live-squads-v11]
   workflow_dispatch:
 
 # Each feature-branch commit triggers validation; obsolete queued runs should
 # never consume runners or delay the latest vetted game build.
 concurrency:
-  group: wildbound-v10-challenge-validation
+  group: wildbound-v11-squad-validation
   cancel-in-progress: true
 
 permissions:
@@ -78,6 +78,16 @@ jobs:
         with:
           name: wildbound-v10-real-gameplay
           path: Docs/QA/wildbound_v10_*.png
+
+      - name: Validate six real creatures, elemental targeting and trainer battle choices
+        run: godot --headless --path . --script res://tests/check_squads_v11.gd
+      - name: Render v0.11 mono, mixed and Guardian trainer squads
+        run: xvfb-run -a godot --path . --script res://tests/capture_squads_v11.gd
+      - name: Save v0.11 genuine six-sprite combat screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v11-live-squads
+          path: Docs/QA/wildbound_v11_*.png
 
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
