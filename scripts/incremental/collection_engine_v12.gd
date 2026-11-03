@@ -49,7 +49,7 @@ func _new_record(kind: String,seed: int = 0) -> Dictionary:
     var traits: Array[String] = ["Bold","Swift","Stout","Keen"]
     var variant: int = (seed % 4) if seed > 0 else _rng.randi_range(0,3)
     return {"id":maxi(1,seed),"level":1,"bond":0,"gene":0,"evolved":false,
-        "trait":traits[variant],"power":1.12 if variant == 0 else 1.0,
+        "trait":traits[variant],"shimmer":false,"power":1.12 if variant == 0 else 1.0,
         "speed":1.13 if variant == 1 else 1.0,
         "vigor":1.18 if variant == 2 else 1.0,
         "focus":1.11 if variant == 3 else 1.0}
@@ -112,7 +112,7 @@ func combat_damage(kind: String) -> float:
     var base: float = float(CATALOG[kind]["base"])
     var heredity: float = pow(1.065,float(int(item["gene"])))
     var evolved_gain: float = 2.8 if bool(item["evolved"]) else 1.0
-    var rare_gain: float = 1.22 if bool(rare.get(kind,false)) else 1.0
+    var rare_gain: float = 1.22 if bool(item.get("shimmer",false)) else 1.0
     var build: float = pow(1.13,float(int(modules["power"])))
     var research_gain: float = pow(1.22,float(int(research["might"])))
     var trail_gain: float = pow(1.12,float(trail_rank))
@@ -283,6 +283,7 @@ func hatch_egg() -> String:
         levels[kind] = 1
     var rarity: bool = rare_pity >= 9 or _rng.randf() < 0.07
     rare[kind] = rarity
+    owned_creatures[kind]["shimmer"] = rarity
     rare_pity = 0 if rarity else rare_pity+1
     collecting_notice = "%s joined! Trait: %s. You own %d / 12 unique species." % [
         combat_name(kind),unit_trait(kind),collection_count()]
@@ -425,7 +426,7 @@ func load_save() -> bool:
                     if CATALOG.has(key) and saved_collection[key] is Dictionary:
                         var item: Dictionary = saved_collection[key]
                         owned_creatures[key] = _new_record(String(key),maxi(1,int(item.get("id",1))))
-                        for field in ["level","bond","gene","evolved","trait","power","speed","vigor","focus"]:
+                        for field in ["level","bond","gene","evolved","trait","shimmer","power","speed","vigor","focus"]:
                             if item.has(field):
                                 owned_creatures[key][field] = item[field]
                         owned_creatures[key]["level"] = maxi(1,int(owned_creatures[key]["level"]))
