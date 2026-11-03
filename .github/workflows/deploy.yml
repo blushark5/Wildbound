@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Wildbound creature incremental reboot"]
     types: [completed]
-    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08]
+    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09]
 
 permissions:
   contents: read
@@ -182,6 +182,32 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-site/next/index.pck"
           test -s "$RUNNER_TEMP/wildbound-site/next/index.wasm"
           printf 'Wildbound Battle v0.8 Candidate\nSource: %s\n' "$(git -C battle-next rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/next/build-info.txt"
+
+      # v0.9 is the independently tested journey-first candidate. Its save
+      # namespace is deliberately separate from every previous browser game.
+      - name: Checkout verified v0.9 journey candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-journey-rebuild-v09' && github.event.workflow_run.head_sha || 'feature/wildbound-journey-rebuild-v09' }}
+          path: journey-preview
+
+      - name: Isolate journey sandbox saves
+        run: |
+          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_journey_v09_preview_v1.json/g' journey-preview/scripts/incremental/engine.gd
+
+      - name: Import and test real v0.9 journey progression
+        run: |
+          godot --headless --path journey-preview --editor --import --quit
+          godot --headless --path journey-preview --script res://tests/check_journey_v09.gd
+
+      - name: Export journey-first browser version only to /journey/
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/journey"
+          godot --headless --path journey-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/journey/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/journey/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/journey/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/journey/index.wasm"
+          printf 'Wildbound Journey v0.9 Candidate\nSource: %s\n' "$(git -C journey-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/journey/build-info.txt"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
