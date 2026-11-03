@@ -52,6 +52,7 @@ var strike_button: Button
 var resonance_button: Button
 var speed_button: Button
 var repeat_button: Button
+var batch_button: Button
 var tab_buttons: Dictionary = {}
 var sidebar: VBoxContainer
 var active_rows: Array[Dictionary] = []
@@ -236,7 +237,9 @@ func _build_layout() -> void:
     ward_bar = _paint("WardFill",Rect2(38,396,784,5),GREEN)
 
     _panel("PackPanel",Rect2(14,417,826,203),Color("#142b38"),Color("#405f62"))
-    _label("PackHeader","YOUR PACK",Rect2(30,419,252,24),17,GREEN)
+    _label("PackHeader","YOUR PACK",Rect2(30,419,177,24),17,GREEN)
+    batch_button = _button("Batch","BUY x1",Rect2(224,418,112,26),_toggle_batch,GOLD)
+    batch_button.add_theme_font_size_override("font_size",11)
     _label("PackDps","",Rect2(345,420,475,21),13,MUTED).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
     for i in range(ENGINE.ORDER.size()):
         var kind: String = String(ENGINE.ORDER[i])
@@ -264,7 +267,7 @@ func _build_layout() -> void:
     _paint("TrailRail",Rect2(872,240,255,10),Color("#324c50"))
     trail_fill = _paint("TrailFill",Rect2(874,242,0,6),GREEN)
     trail_button = _button("ClaimTrail","KEEP GOING",Rect2(1136,224,111,40),_claim_trail,GOLD)
-    _label("QuestReward","",Rect2(872,264,255,19),11,GOLD)
+    _label("QuestReward","",Rect2(872,264,377,19),11,GOLD)
 
     _panel("SidebarPanel",Rect2(852,296,414,411),Color("#142b39"),Color("#4e7376"))
     for i in range(TABS.size()):
@@ -469,7 +472,7 @@ func _refresh() -> void:
     trail_fill.size.x = 251.0*clampf(float(current)/maxf(float(target),1.0),0.0,1.0)
     trail_button.disabled = not game.trail_ready()
     trail_button.text = "CLAIM!" if game.trail_ready() else ("DONE" if game.trail_complete() else "IN PROGRESS")
-    screen_labels["QuestReward"].text = "Permanent +12%% damage  •  %s G  •  %d Shards  •  %d Echoes" % [
+    screen_labels["QuestReward"].text = "+12%% PERMANENT DMG  •  +%s G  •  +%d SHARDS  •  +%d ECHOES" % [
         game.format_number(float(stage["gold"])),int(stage["shards"]),int(stage["echoes"])] if not game.trail_complete() else "Keep growing your pack and reaching new regions."
     for i in range(ENGINE.ORDER.size()):
         var kind: String = String(ENGINE.ORDER[i])
@@ -513,6 +516,7 @@ func _refresh() -> void:
     resonance_button.text = "RESONANCE READY" if game.overdrive >= 99.99 else "RESONANCE %d%%" % int(game.overdrive)
     repeat_button.text = "FARMING" if game.repeat_wave else "ADVANCE"
     speed_button.text = "SPEED %dx" % int(game.game_speed)
+    batch_button.text = "BUY x%d" % batch
     _refresh_sidebar()
 
 func _refresh_landscape() -> void:
