@@ -574,7 +574,7 @@ func _refresh_codex() -> void:
         var card: Panel = entry["panel"]
         var artwork: TextureRect = entry["picture"]
         var name: Label = entry["name"]
-        var trait: Label = entry["trait"]
+        var trait_label: Label = entry["trait"]
         var status: Label = entry["status"]
         if owned:
             var item: Dictionary = game.unit_record(String(key))
@@ -584,7 +584,7 @@ func _refresh_codex() -> void:
             artwork.texture = COLLECTION_ART.get_creature(String(key),bool(item["evolved"]))
             artwork.modulate = Color.WHITE
             name.text = String(COLLECTION_ENGINE.CATALOG[key]["evolved"] if bool(item["evolved"]) else COLLECTION_ENGINE.CATALOG[key]["name"])
-            trait.text = "%s TRAIT  •  LV %d" % [String(item["trait"]).to_upper(),int(item["level"])]
+            trait_label.text = "%s TRAIT  •  LV %d" % [String(item["trait"]).to_upper(),int(item["level"])]
             status.text = "IN SQUAD • SLOT %d" % (slot+1) if slot >= 0 else "READY TO JOIN"
             action.disabled = slot == chosen_slot
             action.text = "SELECTED" if slot == chosen_slot else ("MOVE HERE" if slot >= 0 else "ASSIGN TO SLOT %d" % (chosen_slot+1))
@@ -594,7 +594,7 @@ func _refresh_codex() -> void:
             artwork.texture = COLLECTION_ART.get_creature(String(key),false)
             artwork.modulate = Color("#365360",0.47)
             name.text = "???  •  UNDISCOVERED"
-            trait.text = String(COLLECTION_ENGINE.CATALOG[key]["element"]).to_upper()+"  •  UNKNOWN TRAITS"
+            trait_label.text = String(COLLECTION_ENGINE.CATALOG[key]["element"]).to_upper()+"  •  UNKNOWN TRAITS"
             status.text = "WAITING IN THE WILDS"
             action.disabled = true
             action.text = "NOT YET HATCHED"
