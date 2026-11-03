@@ -27,6 +27,26 @@ var trainer_wins: int = 0
 var combat_revision: int = 0
 var last_clash: String = "Your three creatures will automatically seek favorable targets."
 
+# Extensible species API for collection branches. The original three remain
+# unchanged for v0.11 and its regression tests.
+func combat_meta(kind: String) -> Dictionary:
+    return SPECIES.get(kind,{})
+
+func combat_owned(kind: String) -> bool:
+    return int(levels.get(kind,0)) > 0
+
+func combat_damage(kind: String) -> float:
+    return species_damage(kind)
+
+func combat_interval(kind: String) -> float:
+    return attack_interval(kind)
+
+func combat_enemy_interval(kind: String) -> float:
+    return float(combat_meta(kind).get("interval",1.0))
+
+func combat_name(kind: String) -> String:
+    return species_name(kind)
+
 func initialize_squads() -> void:
     for i in range(SQUAD_SIZE):
         var kind: String = squad_slots[i]
@@ -158,8 +178,8 @@ func squad_dps() -> float:
         var target: int = _pick_target(String(unit["kind"]),rival_units)
         if target < 0:
             continue
-        combined += species_damage(String(unit["kind"]))*multiplier(
-            String(unit["kind"]),String(rival_units[target]["kind"]))/attack_interval(String(unit["kind"]))
+        combined += combat_damage(String(unit["kind"]))*multiplier(
+            String(unit["kind"]),String(rival_units[target]["kind"]))/combat_interval(String(unit["kind"]))
     return combined
 
 func battle_dps() -> float:
@@ -183,7 +203,7 @@ func _ally_hit(index: int) -> void:
         return
     var kind: String = String(attacker["kind"])
     var victim: String = String(rival_units[target]["kind"])
-    var damage: float = species_damage(kind)*multiplier(kind,victim)
+    var damage: float = combat_damage(kind)*multiplier(kind,victim)
     if enemy_is_boss():
         damage *= 1.0+0.20*float(int(modules.get("pierce",0)))
         if equipped_relics.has("sigil"):
@@ -213,7 +233,7 @@ func _rival_hit(index: int) -> void:
     ally_units[target]["hp"] = maxf(0.0,float(ally_units[target]["hp"])-amount)
     ally_units[target]["flash"] = 0.18
     if float(ally_units[target]["hp"]) <= 0.0:
-        last_clash = "%s was knocked out! The remaining squad keeps fighting." % species_name(defense_type)
+        last_clash = "%s was knocked out! The remaining squad keeps fighting." % combat_name(defense_type)
     _sync_health()
     _refresh_ai_targets()
     if ally_alive() == 0:
@@ -229,7 +249,7 @@ func _damage_rival(index: int,damage: float,source: String) -> void:
     raw_damage_done += minf(before,damage)
     if float(hit["hp"]) <= 0.0 and before > 0.0:
         last_clash = "%s defeated %s! Targets are being reassigned." % [
-            species_name(source),String(SPECIES[String(hit["kind"])]["name"])]
+            combat_name(source),String(combat_meta(String(hit["kind"])).get("name",hit["kind"]))]
     _sync_health()
     _refresh_ai_targets()
     if rival_alive() == 0:
@@ -328,7 +348,7 @@ func tick(delta: float) -> void:
         if float(unit["hp"]) <= 0.0:
             continue
         unit["clock"] = float(unit["clock"])+dt
-        var interval: float = attack_interval(String(unit["kind"]))
+        var interval: float = combat_interval(String(unit["kind"]))
         if float(unit["clock"]) >= interval:
             unit["clock"] = float(unit["clock"])-interval
             _ally_hit(i)
@@ -340,7 +360,7 @@ func tick(delta: float) -> void:
         if float(unit["hp"]) <= 0.0:
             continue
         unit["clock"] = float(unit["clock"])+dt
-        var interval: float = maxf(0.65,float(SPECIES[String(unit["kind"])]["interval"])*1.9)
+        var interval: float = maxf(0.65,combat_enemy_interval(String(unit["kind"]))*1.9)
         if float(unit["clock"]) >= interval:
             unit["clock"] = float(unit["clock"])-interval
             _rival_hit(i)

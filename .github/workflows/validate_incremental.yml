@@ -1,13 +1,13 @@
 name: Wildbound creature incremental reboot
 on:
   push:
-    branches: [feature/wildbound-live-squads-v11]
+    branches: [feature/wildbound-unique-collection-v12]
   workflow_dispatch:
 
 # Each feature-branch commit triggers validation; obsolete queued runs should
 # never consume runners or delay the latest vetted game build.
 concurrency:
-  group: wildbound-v11-squad-validation
+  group: wildbound-v12-collection-validation
   cancel-in-progress: true
 
 permissions:
@@ -27,6 +27,8 @@ jobs:
           include-templates: true
       - name: Import assets and check GDScript
         run: godot --headless --path . --editor --import --quit
+      - name: Validate four-element collection, distinct owned individuals and earned hatches
+        run: timeout 45s godot --headless --path . --script res://tests/check_collection_v12.gd
       - name: Validate six real creatures, elemental targeting and trainer battle choices
         run: timeout 45s godot --headless --path . --script res://tests/check_squads_v11.gd
       - name: Validate progression, persistent evolution and interface
@@ -88,6 +90,14 @@ jobs:
         with:
           name: wildbound-v11-live-squads
           path: Docs/QA/wildbound_v11_*.png
+
+      - name: Render genuine collection, unique starter and mixed team scenes
+        run: xvfb-run -a godot --path . --script res://tests/capture_collection_v12.gd
+      - name: Archive actual v0.12 unique collection game screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v12-unique-collection
+          path: Docs/QA/wildbound_v12_*.png
 
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10

@@ -1,0 +1,15 @@
+# Wildbound v0.12 — A Collection Worth Building
+
+## Player feedback answered
+- **No Gold-recruit buttons.** New monsters require a gradually more expensive Essence hatch earned only through trainer victories. First hatch costs 5 Essence, then 8, 13, 20, and increasingly more. A full twelve-species collection is a long-term goal. Each hatch guarantees a species not already owned.
+- **Every owned creature is an individual.** Persistent unique ID, one of four traits (Bold +damage, Swift +attack speed, Stout +HP, Keen +focus damage), its own level, bonds, genes, evolution and Shimmer flag. Individual copies are not created by spending Gold.
+- **Never duplicate a species across the active squad.** The player starts with Spriglet in slot one and EMPTY slots two and three. Hatching adds a creature to the collection, not automatically to the fighting squad. Choosing a creature already active MOVES it; it cannot occupy two slots. Three live combatants remain the target squad size.
+- **Four simplified elements**, EARTH > WATER > FIRE > AIR > EARTH. Favorable matchup 2x; unfavorable 0.45x; opposite elements neutral. Each fighter independently targets a living enemy with the best elemental advantage.
+- **Twelve distinct species** in four groups of three. Earth: Spriglet/Pebblit/Mossling. Water: Brinlet/Driplet/Tidefin. Fire: Cindlet/Ashcub/Emberlyn. Air: Zephlet/Gustling/Skyray. All have distinct names, baselines, cadence, survivability and illustrated species art: preserve original three bestiary poses and supply nine new original SVG portraits.
+- **Discovery curve:** the first five trainer wins each yield 1 Essence. The first hatch is a Fire companion to counter the Air squad at stage six. Subsequent early hatches introduce Water and Air, then new random unowned species. Later hatches are deliberately costlier.
+- **UX:** a prominent COLLECT shortcut in the pack header, a dedicated COLLECT tab displaying hatching cost, Essence progress and all twelve discovered/undiscovered creatures, individual trait/level/bond/genes, and explicit ASSIGN actions for each squad slot. Separate UPGRADES tab for Gold-driven growth.
+- **Preserved:** v0.11 live three-on-three, per-individual HP/targeting, manual Next/Farm, Guardian rewards, talents, research, Ascension, persistence and browser save isolation.
+- **Current boundaries:** v0.12 treats captured units as individually named species with rolled traits, not an unlimited duplicate inventory of the same species. Repeated eggs after completion are currently disabled; deeper genetics, capture methods and bespoke animation are future design work. These are original Wildbound monsters, not Pokemon sprite copies.
+
+## Release and tests
+Work on feature/wildbound-unique-collection-v12. Validate independent collection and squad state, full legacy regressions, art availability and web export. Host only under /collection/ with a new local browser save key, preserving /squads/, /challenge/, /journey/ and root. Playtest the first hatch, type wall and roster assignment before promoting.

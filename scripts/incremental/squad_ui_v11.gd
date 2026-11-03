@@ -103,6 +103,8 @@ func _install_squad_stage() -> void:
 
 func _refresh() -> void:
     super._refresh()
+    if game != null and game.has_method("collection_count"):
+        return
     if not squad_display_ready or game == null or not game.has_method("rival_alive"):
         return
     var cleared: bool = bool(game.awaiting_next)
@@ -244,13 +246,13 @@ func _switch_tab(next: String) -> void:
     super._switch_tab(next)
     if game == null or not game.has_method("cycle_slot") or sidebar == null:
         return
-    if next == "GROW":
+    if next == "GROW" and not game.has_method("collection_count"):
         for kind in CHALLENGE.ORDER:
             _sidebar_card("RECRUIT • "+String(CHALLENGE.SPECIES[kind]["name"]),
                 "Unlock this species for squad slots. Grove > Tide > Ember > Grove. Copies in your lineup use its level and Gene bonuses.",
                 "RECRUIT",_recruit_species.bind(String(kind)),"recruit",String(kind))
         _refresh_sidebar()
-    elif next == "WORLD":
+    elif next == "WORLD" and not game.has_method("collection_count"):
         _sidebar_card("Squad AI and Priority",
             "All SIX monsters independently target their best elemental matchup. After a KO they immediately retarget the most efficient living enemy.",
             "GUIDE",_show_first_steps,"information")
@@ -258,7 +260,7 @@ func _switch_tab(next: String) -> void:
 
 func _refresh_sidebar() -> void:
     super._refresh_sidebar()
-    if game == null or not game.has_method("cycle_slot"):
+    if game == null or not game.has_method("cycle_slot") or game.has_method("collection_count"):
         return
     for row in active_rows:
         if String(row["mode"]) != "recruit":

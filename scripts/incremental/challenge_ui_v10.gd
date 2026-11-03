@@ -70,6 +70,10 @@ func _install_challenge_controls() -> void:
 
 func _refresh() -> void:
     super._refresh()
+    # The unique collection version owns the squad HUD. Its species keys may
+    # not be the three original archetypes used by v0.10 leader widgets.
+    if game != null and game.has_method("collection_count"):
+        return
     # super._ready() invokes this before challenge controls have been added.
     if game == null or focus_buttons.size() != 3 or not game.has_method("battle_dps"):
         return
@@ -182,7 +186,7 @@ func _switch_tab(next: String) -> void:
     super._switch_tab(next)
     if game == null or not game.has_method("battle_dps"):
         return
-    if next == "WORLD":
+    if next == "WORLD" and not game.has_method("collection_count"):
         # Explanatory primer available in the same panel as tactic changes.
         _sidebar_card("Elemental Counterplay",
             "GROVE beats TIDE. TIDE beats EMBER. EMBER beats GROVE. Pick FOCUS on a creature card to double down on the matchup.",
