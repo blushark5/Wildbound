@@ -53,7 +53,11 @@ func _verify() -> void:
     game.awaiting_next = false
     game.levels["brinlet"] = 1
     game.enemy_species = "cindlet"
+    # Both samples must use the same crit roll. A random critical hit
+    # in only one sample makes this genuine multiplier regression flaky.
+    game._rng.seed = 90210
     var old_hit: float = game.effective_damage("brinlet")
+    game._rng.seed = 90210
     if not game.focus("brinlet") or game.effective_damage("brinlet") <= old_hit*2.0:
         _die("Selecting a counter didn't strengthen battle attacks");return
     if not game.element_relation("brinlet").contains("SUPER EFFECTIVE"):
