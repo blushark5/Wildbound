@@ -37,6 +37,8 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/check_roster_v18.gd
       - name: Validate v0.19 new game, 3 save slots, explicit first battle, Ascension access
         run: timeout 90s godot --headless --path . --script res://tests/check_saves_v19.gd
+      - name: Validate v0.20 clear element icons, stage winner history, safe farming and direct push
+        run: timeout 90s godot --headless --path . --script res://tests/check_farm_icons_v20.gd
       - name: Validate polished illustrated world and full-screen Field Guide
         run: timeout 60s godot --headless --path . --script res://tests/check_visual_v13.gd
       - name: Validate four-element collection, distinct owned individuals and earned hatches
@@ -122,6 +124,14 @@ jobs:
       - name: Print compact real-game art thumbnails for visual QA
         run: xvfb-run -a godot --path . --script res://tests/preview_visual_v13.gd
 
+      - name: Render v0.20 element-marked battle, squad guide and farm picker
+        run: xvfb-run -a godot --path . --script res://tests/capture_farm_icons_v20.gd
+      - name: Archive v0.20 real squad and stage picker screenshot review
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v20-element-icons-and-safe-farming
+          path: Docs/QA/wildbound_v20_*.png
+
       - name: Render v0.19 real start gate, save manager, and Ascension shortcut
         run: xvfb-run -a godot --path . --script res://tests/capture_saves_v19.gd
       - name: Archive v0.19 genuine menu and first-battle UX screenshots
@@ -189,6 +199,11 @@ jobs:
           grep -aFq "v18/ascended.webp.base64" /tmp/wildbound-idle-web/index.pck
           grep -aFq "save_slots_v19.gd" /tmp/wildbound-idle-web/index.pck
           grep -aFq "bond_ui_v19.gd" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "bond_engine_v20.gd" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "icon_fire.svg" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "icon_water.svg" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "icon_earth.svg" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "icon_air.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "gustling_evolved_idle.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "fx_fire.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "v07_evolved_bestiary.webp.base64" /tmp/wildbound-idle-web/index.pck
