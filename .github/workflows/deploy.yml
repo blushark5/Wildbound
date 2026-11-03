@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Wildbound creature incremental reboot"]
     types: [completed]
-    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07]
+    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08]
 
 permissions:
   contents: read
@@ -154,6 +154,34 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-site/visual/index.pck"
           test -s "$RUNNER_TEMP/wildbound-site/visual/index.wasm"
           printf 'Wildbound Visual Sandbox\nSource: %s\n' "$(git -C visual-review rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/visual/build-info.txt"
+
+      # The v0.8 candidate is published side by side. Never overwrite the
+      # approved /visual/ art review, /reboot/ gameplay or root RPG.
+      - name: Checkout v0.8 battle experience candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-battle-experience-v08' && github.event.workflow_run.head_sha || 'feature/wildbound-battle-experience-v08' }}
+          path: battle-next
+
+      - name: Give v0.8 an independent browser save namespace
+        run: |
+          sed -i 's/Wildbound: Creature Ascension (Prototype)/Wildbound: Battle v0.8 (Preview)/g' battle-next/project.godot
+          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_battle_v08_preview_v1.json/g' battle-next/scripts/incremental/engine.gd
+
+      - name: Import candidate assets and validate stage scripts
+        run: godot --headless --path battle-next --editor --import --quit
+
+      - name: Test v0.8 creature formation and boss combat before hosting
+        run: godot --headless --path battle-next --script res://tests/check_visual_v08.gd
+
+      - name: Publish browser-playable v0.8 only to /next/
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/next"
+          godot --headless --path battle-next --export-release "Web" "$RUNNER_TEMP/wildbound-site/next/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/next/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/next/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/next/index.wasm"
+          printf 'Wildbound Battle v0.8 Candidate\nSource: %s\n' "$(git -C battle-next rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/next/build-info.txt"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
