@@ -35,7 +35,7 @@ func _capture() -> void:
     ui.game.gold = 10000.0
     ui.game.buy_levels("brinlet",5)
     ui.game.buy_levels("cindlet",5)
-    ui.game.squad_slots = ["spriglet","brinlet","cindlet"]
+    ui.game.squad_slots.assign(["spriglet","brinlet","cindlet"])
     ui.game.wave = 4
     ui.game._spawn_enemy()
     ui.game._fit_enemy_to_region()
