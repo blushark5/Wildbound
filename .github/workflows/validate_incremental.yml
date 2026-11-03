@@ -80,7 +80,7 @@ jobs:
           path: Docs/QA/wildbound_v10_*.png
 
       - name: Validate six real creatures, elemental targeting and trainer battle choices
-        run: godot --headless --path . --script res://tests/check_squads_v11.gd
+        run: timeout 45s godot --headless --path . --script res://tests/check_squads_v11.gd
       - name: Render v0.11 mono, mixed and Guardian trainer squads
         run: xvfb-run -a godot --path . --script res://tests/capture_squads_v11.gd
       - name: Save v0.11 genuine six-sprite combat screenshots
