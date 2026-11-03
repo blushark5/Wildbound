@@ -48,8 +48,8 @@ func _verify() -> void:
         _fail("Opening Field Guide did not pause live combat");return
     if ui.codex_cards.size() != 12:
         _fail("Field Guide must show 4 columns x 3 original species");return
-    if ui.codex_hatch == null or ui.codex_hatch.texture_normal != null:
-        pass
+    if ui.codex_hatch == null:
+        _fail("Hatching action not present in Field Guide");return
     if not ui.codex_hatch.disabled:
         _fail("Hatch should be disabled without earned Essence");return
     for key in ui.game.COLLECTION_ORDER:
