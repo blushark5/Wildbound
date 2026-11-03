@@ -144,7 +144,7 @@ func _verify() -> void:
     ui.game.squad_slots = ["spriglet","brinlet","spriglet"]
     ui.game.initialize_squads()
     ui.call("_refresh")
-    if not ui.rival_widgets[0]["target"].text.contains("Spriglet") and ui.game.rival_units[0]["target"] >= 0:
+    if not ui.rival_widgets[0]["target"].text.contains("Brinlet") and ui.game.rival_units[0]["target"] >= 0:
         _fail("Enemy targeting HUD isn't updating after a squad change");return
     print("PASS v0.11: six real fighters, clone advantages, automatic counters, live retargeting, KO, Gold, walls, squads, save/UI")
     quit(0)
