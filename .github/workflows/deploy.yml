@@ -15,8 +15,10 @@ permissions:
   pages: write
   id-token: write
 
+# Cancel superseded successful publications, but do not let a cancelled
+# validation run cancel a genuine Pages upload that is already underway.
 concurrency:
-  group: github-pages
+  group: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' && 'github-pages-noop' || 'github-pages-publish' }}
   cancel-in-progress: true
 
 jobs:
