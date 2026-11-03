@@ -45,7 +45,7 @@ func family_of(kind: String) -> String:
     return String(FAMILIES.get(kind,""))
 
 func unit_ascended(kind: String) -> bool:
-    return has_instance(kind) and unit_evolved(kind) and unit_bond_rank(kind) >= 3
+    return has_instance(kind) and unit_evolved(kind) and unit_bond_rank(kind) >= 4
 
 func display_name(kind: String,form: int = 0) -> String:
     if not LINES.has(kind):
@@ -200,7 +200,9 @@ func ascend() -> bool:
 func trail_info() -> Dictionary:
     var original: Dictionary = super.trail_info()
     var next: Dictionary = original.duplicate()
-    if trail_rank == 1:
+    if trail_rank == 0:
+        next["hint"] = "Win five battles. Each first-ever stage grants Essence toward your fourth creature."
+    elif trail_rank == 1:
         next["name"] = "Your Fourth Companion"
         next["hint"] = "Earn five first-clear Essence and hatch a fourth unique creature. Your three starters are gifts, not paid eggs."
         next["target"] = 4
