@@ -75,7 +75,7 @@ func _create_element_icons() -> void:
             Vector2(RIVAL_X[i]+70,199),24.0))
         var x: float = 24.0+float(i)*269.0
         card_element_icons.append(_element_icon("PackElement%d" % i,self,
-            Vector2(x+88,455),25.0))
+            Vector2(x+75,461),25.0))
     # The Field Guide was constructed in v0.13; add color-coded element
     # emblems to each creature without changing selection/action geometry.
     for col in range(4):
