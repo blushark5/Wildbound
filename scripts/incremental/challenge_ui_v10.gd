@@ -70,6 +70,10 @@ func _install_challenge_controls() -> void:
 
 func _refresh() -> void:
     super._refresh()
+    # The unique collection version owns the squad HUD. Its species keys may
+    # not be the three original archetypes used by v0.10 leader widgets.
+    if game != null and game.has_method("collection_count"):
+        return
     # super._ready() invokes this before challenge controls have been added.
     if game == null or focus_buttons.size() != 3 or not game.has_method("battle_dps"):
         return
