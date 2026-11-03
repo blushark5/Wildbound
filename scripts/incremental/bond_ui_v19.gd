@@ -53,8 +53,13 @@ func _build_save_window() -> void:
     save_window.title = "Wildbound • Saved Adventures"
     save_window.ok_button_text = "CLOSE"
     add_child(save_window)
-    var holder: VBoxContainer = save_window.get_vbox()
-    holder.add_theme_constant_override("separation",11)
+    var holder := VBoxContainer.new()
+    holder.name = "SaveSlotControls"
+    holder.position = Vector2(17,24)
+    holder.custom_minimum_size = Vector2(490,388)
+    holder.size = Vector2(490,388)
+    save_window.add_child(holder)
+    holder.add_theme_constant_override("separation",9)
     save_intro = Label.new()
     save_intro.custom_minimum_size = Vector2(490,64)
     save_intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -109,7 +114,7 @@ func _show_save_manager() -> void:
         return
     game.save()
     _update_save_window()
-    save_window.popup_centered(Vector2i(545,455))
+    save_window.popup_centered(Vector2i(550,505))
 
 func _update_save_window() -> void:
     var active: int = SAVE_SLOTS.active_slot()
