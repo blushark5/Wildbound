@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Wildbound creature incremental reboot"]
     types: [completed]
-    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09, feature/wildbound-challenge-loop-v10]
+    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09, feature/wildbound-challenge-loop-v10, feature/wildbound-live-squads-v11]
 
 permissions:
   contents: read
@@ -236,6 +236,33 @@ jobs:
           grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/challenge/index.pck"
           grep -aFq "v07_evolved_bestiary.webp.base64" "$RUNNER_TEMP/wildbound-site/challenge/index.pck"
           printf 'Wildbound Challenge v0.10\nSource: %s\n' "$(git -C challenge-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/challenge/build-info.txt"
+
+      # Independent v0.11 trainer combat test: never overwrite prior branches or saves.
+      - name: Checkout tested v0.11 live three-on-three squad build
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-live-squads-v11' && github.event.workflow_run.head_sha || 'feature/wildbound-live-squads-v11' }}
+          path: squads-preview
+
+      - name: Keep trainer squad saves independent from every older build
+        run: |
+          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_squads_v11_preview_v1.json/g' squads-preview/scripts/incremental/engine.gd
+
+      - name: Validate actual v0.11 live battle and team-selection logic
+        run: |
+          godot --headless --path squads-preview --editor --import --quit
+          godot --headless --path squads-preview --script res://tests/check_squads_v11.gd
+
+      - name: Export independent v0.11 browser game to /squads/
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/squads"
+          godot --headless --path squads-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/squads/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/squads/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/squads/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/squads/index.wasm"
+          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/squads/index.pck"
+          grep -aFq "v07_evolved_bestiary.webp.base64" "$RUNNER_TEMP/wildbound-site/squads/index.pck"
+          printf 'Wildbound Live Squads v0.11\nSource: %s\n' "$(git -C squads-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/squads/build-info.txt"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
