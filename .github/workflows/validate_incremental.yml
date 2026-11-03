@@ -7,7 +7,7 @@ on:
 # Each feature-branch commit triggers validation; obsolete queued runs should
 # never consume runners or delay the latest vetted game build.
 concurrency:
-  group: wildbound-v14-bond-validation
+  group: wildbound-v20-elemental-qol-validation
   cancel-in-progress: true
 
 permissions:
