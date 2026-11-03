@@ -52,7 +52,8 @@ func _install_squad_stage() -> void:
     screen_labels["Toast"].size = Vector2(421,26)
     screen_labels["Toast"].horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     ally_title = _label("SquadTeamTitle","YOUR SQUAD",Rect2(55,178,350,21),14,GREEN)
-    rival_title = _label("RivalTeamTitle","RIVAL TRAINER",Rect2(505,178,310,21),14,CORAL).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    rival_title = _label("RivalTeamTitle","RIVAL TRAINER",Rect2(505,178,310,21),14,CORAL)
+    rival_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
     squad_status = _label("SquadTip","",Rect2(397,217,101,65),12,GOLD)
     squad_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     squad_status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
