@@ -74,7 +74,12 @@ func _verify() -> void:
         _fail("Confirmed current-slot deletion left data behind or resumed combat");return
     if not FileAccess.file_exists(SLOTS.slot_path(1)):
         _fail("Deleting Slot 2 accidentally destroyed Slot 1");return
+    ui._show_save_manager()
+    if FileAccess.file_exists(GAME.SAVE_FILE):
+        _fail("Opening SAVES silently recreated a deleted slot");return
     ui._load_slot(1)
+    if FileAccess.file_exists(SLOTS.slot_path(2)):
+        _fail("Switching away from a deleted, unstarted slot silently recreated it");return
     if ui.game.gold < 73.0:
         _fail("Slot 1 did not survive Slot 2 deletion");return
     ui._confirm_new_game()

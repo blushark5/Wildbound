@@ -7,6 +7,7 @@ const SAVE_SLOTS = preload("res://scripts/incremental/save_slots_v19.gd")
 var save_window: AcceptDialog
 var save_intro: Label
 var slot_buttons: Array[Button] = []
+var save_now_button: Button
 var new_run_button: Button
 var delete_button: Button
 var delete_all_button: Button
@@ -46,8 +47,12 @@ func _build_save_window() -> void:
     var save_header: Button = get_node("Save") as Button
     save_header.text = "SAVES"
     save_header.tooltip_text = "Save progress, switch between three local slots, start a fresh game or delete stored data."
-    # The existing SAVE action runs first. This additional callback then
-    # presents the save manager, so opening it never loses live progress.
+    # The old top-right SAVE button wrote a save immediately. The new
+    # manager must NOT quietly re-create a just-deleted/empty save slot.
+    # Switching and the explicit SAVE NOW action safely flush live progress.
+    var old_callback: Callable = Callable(self,"_save")
+    if save_header.pressed.is_connected(old_callback):
+        save_header.pressed.disconnect(old_callback)
     save_header.pressed.connect(_show_save_manager)
     save_window = AcceptDialog.new()
     save_window.title = "Wildbound • Saved Adventures"
@@ -56,8 +61,8 @@ func _build_save_window() -> void:
     var holder := VBoxContainer.new()
     holder.name = "SaveSlotControls"
     holder.position = Vector2(17,24)
-    holder.custom_minimum_size = Vector2(490,388)
-    holder.size = Vector2(490,388)
+    holder.custom_minimum_size = Vector2(490,429)
+    holder.size = Vector2(490,429)
     save_window.add_child(holder)
     holder.add_theme_constant_override("separation",9)
     save_intro = Label.new()
@@ -71,6 +76,12 @@ func _build_save_window() -> void:
         _skin_button(btn,PALETTE["sage"],true)
         holder.add_child(btn)
         slot_buttons.append(btn)
+    save_now_button = Button.new()
+    save_now_button.text = "SAVE CURRENT SLOT NOW"
+    save_now_button.custom_minimum_size = Vector2(490,39)
+    save_now_button.pressed.connect(_save_current_slot)
+    _skin_button(save_now_button,Color("#98e1b7"),true)
+    holder.add_child(save_now_button)
     new_run_button = Button.new()
     new_run_button.text = "NEW GAME IN CURRENT SLOT"
     new_run_button.custom_minimum_size = Vector2(490,42)
@@ -112,9 +123,15 @@ func _build_ascension_shortcut() -> void:
 func _show_save_manager() -> void:
     if not ui19_ready:
         return
-    game.save()
     _update_save_window()
-    save_window.popup_centered(Vector2i(550,505))
+    save_window.popup_centered(Vector2i(550,550))
+
+func _save_current_slot() -> void:
+    if game.save():
+        _toast("Slot %d saved in this browser." % SAVE_SLOTS.active_slot())
+        _update_save_window()
+    else:
+        _toast("Could not save this slot.")
 
 func _update_save_window() -> void:
     var active: int = SAVE_SLOTS.active_slot()
@@ -123,6 +140,8 @@ func _update_save_window() -> void:
     for i in range(1,4):
         var button: Button = slot_buttons[i-1]
         var status: String = SAVE_SLOTS.slot_summary(game.SAVE_FILE,i)
+        if i == active and game.battle_started:
+            status = "STAGE %d • ASC %d • %d CREATURES" % [game.wave,game.ascensions,game.collection_count()]
         button.text = ("▶  SLOT %d  •  %s  •  CURRENT" if i == active else "SLOT %d  •  %s") % [i,status]
         button.disabled = i == active
     new_run_button.text = "NEW GAME IN SLOT %d (REPLACES THAT SLOT)" % active
@@ -131,8 +150,12 @@ func _update_save_window() -> void:
 func _load_slot(index: int) -> void:
     if index == SAVE_SLOTS.active_slot():
         return
-    # The current slot is preserved before the canonical save file swaps.
-    if not game.save() or not SAVE_SLOTS.switch_to(game.SAVE_FILE,index):
+    # Keep a genuinely deleted/empty slot empty when switching away.
+    # Started or explicitly saved slots are always flushed before swapping.
+    if (game.battle_started or FileAccess.file_exists(game.SAVE_FILE)) and not game.save():
+        _toast("Could not save your current slot; no switch was made.")
+        return
+    if not SAVE_SLOTS.switch_to(game.SAVE_FILE,index):
         _toast("Could not switch save slots. Current game has been preserved.")
         return
     save_window.hide()
