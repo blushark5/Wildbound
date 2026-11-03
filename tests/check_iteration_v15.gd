@@ -10,7 +10,7 @@ func _fail(why: String) -> void:
     push_error("Wildbound v0.15: "+why)
     quit(1)
 
-func _win(game: Node) -> void:
+func _win(game: RefCounted) -> void:
     for i in range(3):
         if game.awaiting_next:
             break
