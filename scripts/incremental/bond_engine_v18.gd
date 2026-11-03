@@ -62,6 +62,12 @@ func combat_meta(kind: String) -> Dictionary:
         info["tone"] = String(LINES[kind][3])
     return info
 
+func total_dps() -> float:
+    # The inherited v0.11 implementation computes damage using the old
+    # three-species dictionary. Randomized v0.18 teams can contain any of
+    # twelve species; always use the real six-unit combat API instead.
+    return squad_dps()
+
 func combat_name(kind: String) -> String:
     if not LINES.has(kind):
         return "Unassigned"
