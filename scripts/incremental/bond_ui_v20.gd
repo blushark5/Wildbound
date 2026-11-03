@@ -35,6 +35,9 @@ func _ready() -> void:
     playing = game.battle_started
     _create_element_icons()
     _create_farm_controls()
+    # Battle emblems are added after the original Field Guide overlay.
+    # Keep the Field Guide above them so badges never bleed through its dim veil.
+    codex_layer.z_index = 12
     ui20_ready = true
     _refresh()
     if not game.battle_started:
