@@ -157,12 +157,12 @@ func _refresh() -> void:
         var xp: int = game.unit_bond(key)
         var goal: int = game.next_bond_goal(key)
         var element: String = String(BOND_ENGINE.CATALOG[key]["element"])
-        var trait: String = game.unit_trait(key).to_upper()
+        var individual_trait: String = game.unit_trait(key).to_upper()
         card_details[ckey].text = "Lv %d / %d • %s\nBOND %d • XP %d/%d" % [
             level,cap,element,rank,xp,goal]
         card_details[ckey].tooltip_text = (
             "%s trait • %d Genes. Win trainer battles to build Bond XP. At Ascension, %d XP promotes Bond Rank %d to %d and raises the future level cap to %d." % [
-                trait,game.unit_gene(key),goal,rank,rank+1,cap+5])
+                individual_trait,game.unit_gene(key),goal,rank,rank+1,cap+5])
         var remaining: int = game.level_batch_available(key,batch)
         var price: float = game.creature_level_price(key,batch)
         if remaining == 0:
