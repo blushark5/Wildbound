@@ -52,13 +52,21 @@ func _new_ally(kind: String, index: int) -> Dictionary:
         "target":-1,"slot":index,"flash":0.0}
 
 func _new_rival(kind: String,index: int) -> Dictionary:
-    # This total comes from v0.10's tougher stage curve and Guardian modifier.
-    # Enemy HP is real and separately depleted for each of the three rivals.
-    var per_unit: float = maxf(5.0,enemy_max_hp*(0.19 if enemy_is_boss() else 0.75))
+    # Calculate a deterministic base rather than reusing enemy_max_hp:
+    # that compatibility field is the SUM of the current trio, and
+    # reusing it would inflate HP every time a player changed a slot.
+    var base: float = 18.0*pow(1.185,float(wave-1))
+    base *= 4.0 if enemy_is_boss() else 1.0
+    base *= float(_region_data()["hp"])*(2.0 if overclock else 1.0)
+    base *= challenge_multiplier()
+    if enemy_mutator() == "Armored":
+        base *= 1.65
+    var per_unit: float = maxf(5.0,base*(0.19 if enemy_is_boss() else 0.75))
     return {"kind":kind,"hp":per_unit,"max_hp":per_unit,"clock":0.0,
         "target":-1,"slot":index,"flash":0.0}
 
 func _setup_trainer_fight() -> void:
+    focused_companion = squad_slots[0]
     ally_units.clear()
     rival_units.clear()
     for i in range(SQUAD_SIZE):
@@ -393,7 +401,7 @@ func enter_next_stage() -> bool:
 func set_farming() -> bool:
     var before_stage: int = wave
     var result: bool = super.set_farming()
-    if result and before_stage != wave or result and not awaiting_next:
+    if result and (before_stage != wave or not awaiting_next):
         _setup_trainer_fight()
     return result
 
