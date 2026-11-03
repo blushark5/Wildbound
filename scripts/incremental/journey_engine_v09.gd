@@ -2,7 +2,7 @@ extends "res://scripts/incremental/v04_engine.gd"
 ## v0.9: authored, claimable, permanent journey milestones.
 ## No parallel combat simulation. All rewards use the real existing economy.
 const TRAIL = [
-    {"name":"First Footsteps","hint":"Win 3 wild battles. Your pack fights automatically; tap STRIKE to help.","kind":"kills","target":3,"gold":45.0,"shards":0,"echoes":0},
+    {"name":"First Footsteps","hint":"Beat the first 2 rival trainer squads; then recruit Brinlet to counter the Ember trio.","kind":"kills","target":2,"gold":45.0,"shards":0,"echoes":0},
     {"name":"A Second Companion","hint":"Recruit Brinlet from its creature card. Different elements counter different foes.","kind":"brinlet","target":1,"gold":65.0,"shards":0,"echoes":0},
     {"name":"Growing Stronger","hint":"Level Spriglet to 5. Each level strengthens every automatic attack.","kind":"level","target":5,"gold":110.0,"shards":0,"echoes":0},
     {"name":"The Full Pack","hint":"Recruit Cindlet. All three creatures can fight together.","kind":"cindlet","target":1,"gold":115.0,"shards":1,"echoes":0},
