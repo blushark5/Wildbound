@@ -2,8 +2,8 @@
 config_version=5
 
 [application]
-config/name="Wildbound: Unique Collection v0.12"
-run/main_scene="res://scenes/incremental/wildbound_collection_v12.tscn"
+config/name="Wildbound: Visual World v0.13"
+run/main_scene="res://scenes/incremental/wildbound_visual_v13.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [display]
