@@ -84,6 +84,25 @@ func automate_purchase() -> void:
     if best != "":
         level_creature(best,1)
 
+func set_farming() -> bool:
+    # Farm always replays the last CLEARED stage, including from a live wall.
+    if repeat_wave:
+        repeat_wave = false
+        _report("PUSH RESUMED • Clear stage %d to advance. New first clears grant Essence." % wave)
+        return true
+    if wave <= 1 and not awaiting_next:
+        _report("Clear stage 1 first, then you can farm the cleared stage.")
+        return false
+    var target_stage: int = maxi(1,wave-1)
+    wave = target_stage
+    awaiting_next = false
+    repeat_wave = true
+    _spawn_enemy()
+    _fit_enemy_to_region()
+    _setup_trainer_fight()
+    _report("FARM STAGE %d • Gold and Bond XP ONLY. +0 Essence. Select RESUME PUSH to advance." % target_stage)
+    return true
+
 func ascend() -> bool:
     if available_echoes() < 1:
         return false

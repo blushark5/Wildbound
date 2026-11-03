@@ -50,6 +50,7 @@ func _install_sprite_stage() -> void:
         card_art[ckey].pivot_offset = card_art[ckey].size*0.5
     strike_button.tooltip_text = "During a live fight this is an optional manual ASSIST ATTACK. After a trainer is defeated it becomes NEXT STAGE. A loss changes it to RETRY."
     strike_button.add_theme_font_size_override("font_size",17)
+    repeat_button.add_theme_font_size_override("font_size",12)
     screen_labels["PackHeader"].text = "YOUR PARTNERS"
     screen_labels["Tagline"].text = "COLLECT • BOND • ASCEND • GROW"
     _toast("WIN TO GAIN BOND XP • ASCEND TO RAISE LEVEL CAPS")
@@ -121,7 +122,8 @@ func _show_first_steps() -> void:
         +"Your creature's BOND RANK controls its level ceiling. Rank 1 allows level 8; each higher rank increases the ceiling by 5 levels. Battle victories earn permanent Bond XP, but they DO NOT automatically raise Bond Rank.\n\n"
         +"Ascend after reaching stage 20: an individual with enough Bond XP gains one permanent Bond Rank. Your level and Gold purchases reset, but your new ceiling survives. More Rank = higher damage potential on later runs.\n\n"
         +"Creatures need level 15 and 25 lifetime Bond victories to evolve. Their evolved form, trait and Genes remain yours forever. Hatching new unique creatures still costs only Essence.\n\n"
-        +"In the battle, creatures attack automatically. ASSIST ATTACK gives you optional manual damage. After victory the main button becomes NEXT STAGE; after defeat it becomes RETRY. Farming is still your choice."
+        +"In battle, ASSIST ATTACK adds optional manual damage. After victory use NEXT STAGE; after defeat use RETRY. FARM replays the last cleared stage for Gold and Bond XP. Select RESUME PUSH to move forward.\n\n"
+        +"ESSENCE has no wallet cap. Each stage number grants Essence ONLY on its first-ever clear, across all Ascensions: +1 normally or +4 for a Guardian. Farming and replayed stages grant +0 Essence."
     )
     guide_dialog.popup_centered_ratio(0.77)
 
@@ -145,6 +147,25 @@ func _refresh() -> void:
     else:
         strike_button.text = "ASSIST ATTACK  •  SPACE"
     strike_button.disabled = not playing
+    var farming: bool = game.repeat_wave
+    var wiped: bool = game.awaiting_next and String(game.last_clash).begins_with("SQUAD DEFEATED")
+    repeat_button.disabled = not playing or (not farming and game.wave <= 1 and not game.awaiting_next)
+    repeat_button.text = "RESUME\nPUSH ▶" if farming else "FARM\nSTAGE %d ↻" % maxi(1,game.wave-1)
+    repeat_button.tooltip_text = (
+        "Resume PUSH after this replay, then advance to new stages for first-clear Essence."
+        if farming else
+        "Replay the previously cleared stage %d for Gold + Bond XP. Farming never gives Essence." % maxi(1,game.wave-1))
+    screen_labels["Wave"].text = (
+        "FARM • STAGE %d" % game.wave if farming else
+        "WALL • STAGE %d" % game.wave if wiped else
+        "STAGE %d CLEARED • NEXT %d" % [maxi(1,game.wave-1),game.wave] if game.awaiting_next else
+        "PUSH • STAGE %d" % game.wave)
+    screen_labels["EncounterHint"].text = (
+        "FARMING: GOLD + BOND XP • NO ESSENCE" if farming else
+        "WALL: RETRY OR FARM THE LAST CLEAR" if wiped else
+        "CHOOSE NEXT STAGE OR FARM GOLD" if game.awaiting_next else
+        "NEW STAGES: ESSENCE • REPLAYS: +0")
+    screen_labels["Shards"].tooltip_text = "Essence %d / %d for next egg. No balance cap. Only first-ever clears of a stage number grant Essence, even after Ascension." % [game.essence,game.hatch_cost()]
     screen_labels["PackDps"].text = "BOND-RANKED PARTNERS  •  %d / 3" % game.occupied_slots()
     for i in range(3):
         var key: String = String(game.squad_slots[i])

@@ -43,7 +43,7 @@ var creature_serial: int = 0
 var new_hatches: int = 0
 var unlock_clock: Dictionary = {}
 var last_hatch_kind: String = ""
-var collecting_notice: String = "Earn Essence by winning trainer battles."
+var collecting_notice: String = "Essence comes only from the first-ever clear of each stage."
 
 func _new_record(kind: String,seed: int = 0) -> Dictionary:
     var traits: Array[String] = ["Bold","Swift","Stout","Keen"]
@@ -291,21 +291,27 @@ func hatch_egg() -> String:
     return kind
 
 func _enemy_defeated() -> void:
+    # Lifetime first-clear eligibility must be checked BEFORE the parent
+    # updates the current stage and best_wave high-water mark.
+    var cleared_stage: int = wave
+    var first_clear: bool = not repeat_wave and cleared_stage >= best_wave
     var present: Array[String] = []
     for kind in squad_slots:
         if has_instance(kind):
             present.append(kind)
     super._enemy_defeated()
-    essence += 1+(3 if (wave-1)%10 == 0 and not repeat_wave else 0)
+    var earned: int = (1+(3 if cleared_stage % 10 == 0 else 0)) if first_clear else 0
+    essence += earned
     for kind in present:
         var item: Dictionary = unit_record(kind)
         item["bond"] = int(item["bond"])+1
         if bonds.has(kind):
             bonds[kind] = int(item["bond"])
         _check_personal_evolution(kind)
-    collecting_notice = "+1 Essence! %d / %d for your next unique hatch." % [essence,hatch_cost()]
-    if not awaiting_next and not repeat_wave:
-        collecting_notice = "Trainer defeated. "+collecting_notice
+    collecting_notice = (
+        "FIRST CLEAR • STAGE %d • +%d Essence! %d / %d for next egg." % [cleared_stage,earned,essence,hatch_cost()]
+        if earned > 0 else
+        "REPLAY • STAGE %d • +0 Essence. Gold and Bond XP only; Essence needs a new highest stage." % cleared_stage)
     _report(collecting_notice)
 
 func trail_complete() -> bool:
