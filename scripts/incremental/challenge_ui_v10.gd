@@ -186,7 +186,7 @@ func _switch_tab(next: String) -> void:
     super._switch_tab(next)
     if game == null or not game.has_method("battle_dps"):
         return
-    if next == "WORLD":
+    if next == "WORLD" and not game.has_method("collection_count"):
         # Explanatory primer available in the same panel as tactic changes.
         _sidebar_card("Elemental Counterplay",
             "GROVE beats TIDE. TIDE beats EMBER. EMBER beats GROVE. Pick FOCUS on a creature card to double down on the matchup.",

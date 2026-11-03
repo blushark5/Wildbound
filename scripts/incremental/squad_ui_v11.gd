@@ -252,7 +252,7 @@ func _switch_tab(next: String) -> void:
                 "Unlock this species for squad slots. Grove > Tide > Ember > Grove. Copies in your lineup use its level and Gene bonuses.",
                 "RECRUIT",_recruit_species.bind(String(kind)),"recruit",String(kind))
         _refresh_sidebar()
-    elif next == "WORLD":
+    elif next == "WORLD" and not game.has_method("collection_count"):
         _sidebar_card("Squad AI and Priority",
             "All SIX monsters independently target their best elemental matchup. After a KO they immediately retarget the most efficient living enemy.",
             "GUIDE",_show_first_steps,"information")

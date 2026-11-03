@@ -201,6 +201,13 @@ func cycle_slot(_index: int) -> bool:
     # Squad changes must explicitly pick a unique owned individual.
     return false
 
+func buy_levels(kind: String,amount: int = 1) -> bool:
+    # No route, including automation or older UI actions, may unlock a
+    # species by spending Gold. Only a real earned egg adds a creature.
+    if not has_instance(kind):
+        return false
+    return level_creature(kind,amount)
+
 func creature_level_price(kind: String,amount: int = 1) -> float:
     if not has_instance(kind):
         return INF

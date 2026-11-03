@@ -40,6 +40,7 @@ func _verify() -> void:
         _fail("First unique hatch should cost five earned Essence");return
     if game.hatch_egg() != "":
         _fail("Cannot hatch a creature without fighting trainer battles");return
+    game.gold = 5000.0
     if game.buy_levels("brinlet",1):
         _fail("Direct Gold recruiting must no longer unlock monsters");return
     for i in range(5):
