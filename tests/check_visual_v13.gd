@@ -96,5 +96,10 @@ func _verify() -> void:
     for key in ["spriglet","brinlet","cindlet"]:
         if ui.card_buy[key] == null or ui.focus_buttons[key] == null:
             _fail("Creature growth and squad-selection buttons must remain functional");return
+    # The Field Guide correctly persists changes; isolate this smoke test
+    # so the subsequent v0.12 fresh-start regression sees a clean save.
+    var saved_path: String = ui.game.SAVE_FILE
+    if FileAccess.file_exists(saved_path):
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(saved_path))
     print("PASS v0.13: illustrated arenas, glowing HUD, full 12-portrait Field Guide, hatch, assign, pause, economy, old battle")
     quit(0)

@@ -300,6 +300,14 @@ func _focus(kind: String) -> void:
     chosen_slot = index
     _open_codex()
 
+func _update_unit(visual: Dictionary,unit: Dictionary,enemy: bool,index: int) -> void:
+    # The inherited v0.11 UI briefly initializes its own engine before
+    # v0.12 installs unique creatures. Do not render those temporary units
+    # using collection-only APIs during the parent's _ready cycle.
+    if game == null or not game.has_method("collection_count"):
+        return
+    super._update_unit(visual,unit,enemy,index)
+
 func _refresh() -> void:
     super._refresh()
     if not visual_ready or game == null or not game.has_method("collection_count"):

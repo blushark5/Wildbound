@@ -52,5 +52,8 @@ func _capture() -> void:
     await _frame()
     if not _shot(viewport,"wildbound_v13_collected_individuals"):
         push_error("Unable to capture discovered species in Field Guide");quit(1);return
+    var saved_path: String = ui.game.SAVE_FILE
+    if FileAccess.file_exists(saved_path):
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(saved_path))
     print("PASS: four actual Godot screenshots of v0.13 visual battle and Field Guide")
     quit(0)
