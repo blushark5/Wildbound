@@ -469,7 +469,7 @@ func _refresh() -> void:
     trail_fill.size.x = 251.0*clampf(float(current)/maxf(float(target),1.0),0.0,1.0)
     trail_button.disabled = not game.trail_ready()
     trail_button.text = "CLAIM!" if game.trail_ready() else ("DONE" if game.trail_complete() else "IN PROGRESS")
-    screen_labels["QuestReward"].text = "Permanent +12% damage  •  %s G  •  %d Shards  •  %d Echoes" % [
+    screen_labels["QuestReward"].text = "Permanent +12%% damage  •  %s G  •  %d Shards  •  %d Echoes" % [
         game.format_number(float(stage["gold"])),int(stage["shards"]),int(stage["echoes"])] if not game.trail_complete() else "Keep growing your pack and reaching new regions."
     for i in range(ENGINE.ORDER.size()):
         var kind: String = String(ENGINE.ORDER[i])
