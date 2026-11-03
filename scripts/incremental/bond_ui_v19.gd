@@ -166,9 +166,8 @@ func _confirm_new_game() -> void:
     save_window.hide()
     action_confirmation.title = "Replace This Slot With a New Adventure?"
     action_confirmation.dialog_text = (
-        "This starts a newly randomized Fox, Bird and Lizard team in Slot %d. "
-        +"All progress in THIS slot will be erased. Other save slots are untouched. Continue?"
-        % SAVE_SLOTS.active_slot())
+        "This starts a newly randomized Fox, Bird and Lizard team in Slot %d. " % SAVE_SLOTS.active_slot()
+        +"All progress in THIS slot will be erased. Other save slots are untouched. Continue?")
     action_confirmation.popup_centered(Vector2i(505,225))
 
 func _confirm_delete_current() -> void:
@@ -176,8 +175,8 @@ func _confirm_delete_current() -> void:
     save_window.hide()
     action_confirmation.title = "Delete This Slot's Saved Data?"
     action_confirmation.dialog_text = (
-        "Permanently delete all progress from Slot %d? Other slots are kept. "
-        +"You will return to a fresh, UNSTARTED adventure." % SAVE_SLOTS.active_slot())
+        "Permanently delete all progress from Slot %d? Other slots are kept. " % SAVE_SLOTS.active_slot()
+        +"You will return to a fresh, UNSTARTED adventure.")
     action_confirmation.popup_centered(Vector2i(505,210))
 
 func _confirm_delete_all() -> void:
