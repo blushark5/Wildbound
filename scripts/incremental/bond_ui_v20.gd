@@ -93,7 +93,8 @@ func _create_farm_controls() -> void:
     farm_dialog.title = "Select a Beatable Farming Stage"
     farm_dialog.dialog_text = ""
     farm_dialog.confirmed.connect(_confirm_farm_stage)
-    farm_dialog.popup_hide.connect(_farm_popup_closed)
+    farm_dialog.confirmed.connect(_farm_popup_closed)
+    farm_dialog.canceled.connect(_farm_popup_closed)
     add_child(farm_dialog)
     var layout := VBoxContainer.new()
     layout.name = "FarmStageControls"
