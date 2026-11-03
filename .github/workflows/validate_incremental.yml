@@ -109,6 +109,9 @@ jobs:
           name: wildbound-v13-visual-world
           path: Docs/QA/wildbound_v13_*.png
 
+      - name: Print compact real-game art thumbnails for visual QA
+        run: xvfb-run -a godot --path . --script res://tests/preview_visual_v13.gd
+
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
       - name: Capture actual rendered scene for visual review
