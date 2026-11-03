@@ -60,6 +60,18 @@ func _check() -> void:
         _fail("Starting trio must have three body families and three elements");return
     if game.hatch_cost() != 5:
         _fail("Three free starters inflated the first earned egg");return
+    if not game.trail_info()["hint"].contains("fourth creature"):
+        _fail("First quest still assumes only one starter");return
+    var starter_kind: String = String(game.squad_slots[0])
+    game.owned_creatures[starter_kind]["evolved"] = true
+    game.bond_ranks[starter_kind] = 3
+    if game.unit_ascended(starter_kind):
+        _fail("Ascended art appeared before the evolved tier could be seen");return
+    game.bond_ranks[starter_kind] = 4
+    if not game.unit_ascended(starter_kind):
+        _fail("Ascended art never unlocks at the later mastery rank");return
+    game.owned_creatures[starter_kind]["evolved"] = false
+    game.bond_ranks[starter_kind] = 1
 
     var lineup: String = game.encounter_id(17)
     if lineup != game.encounter_id(17):
