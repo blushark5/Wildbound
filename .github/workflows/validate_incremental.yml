@@ -1,13 +1,13 @@
 name: Wildbound creature incremental reboot
 on:
   push:
-    branches: [feature/wildbound-visual-world-v13]
+    branches: [feature/wildbound-bond-sprite-v14]
   workflow_dispatch:
 
 # Each feature-branch commit triggers validation; obsolete queued runs should
 # never consume runners or delay the latest vetted game build.
 concurrency:
-  group: wildbound-v13-world-validation
+  group: wildbound-v14-bond-validation
   cancel-in-progress: true
 
 permissions:
@@ -27,6 +27,8 @@ jobs:
           include-templates: true
       - name: Import assets and check GDScript
         run: godot --headless --path . --editor --import --quit
+      - name: Validate Bond Rank ceiling, individual Gold purchases and animated creatures
+        run: timeout 60s godot --headless --path . --script res://tests/check_bond_v14.gd
       - name: Validate polished illustrated world and full-screen Field Guide
         run: timeout 60s godot --headless --path . --script res://tests/check_visual_v13.gd
       - name: Validate four-element collection, distinct owned individuals and earned hatches
@@ -112,6 +114,14 @@ jobs:
       - name: Print compact real-game art thumbnails for visual QA
         run: xvfb-run -a godot --path . --script res://tests/preview_visual_v13.gd
 
+      - name: Render actual v0.14 creature attacks, bond ranks and contextual buttons
+        run: xvfb-run -a godot --path . --script res://tests/capture_bond_v14.gd
+      - name: Archive original v0.14 animated sprite and prestige QA screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v14-bond-and-creature-sprites
+          path: Docs/QA/wildbound_v14_*.png
+
       - name: Startup smoke test
         run: godot --headless --path . --quit-after 10
       - name: Capture actual rendered scene for visual review
@@ -147,6 +157,9 @@ jobs:
           grep -aFq "v07_bestiary_atlas.webp.base64" /tmp/wildbound-idle-web/index.pck
           grep -aFq "arena_air.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "nest_egg.svg" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "zephlet_attack.svg" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "gustling_evolved_idle.svg" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "fx_fire.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "v07_evolved_bestiary.webp.base64" /tmp/wildbound-idle-web/index.pck
       - name: Upload browser-playable build without replacing Pages
         uses: actions/upload-artifact@v4
