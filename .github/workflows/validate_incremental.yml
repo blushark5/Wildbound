@@ -110,7 +110,9 @@ jobs:
           godot --headless --path . --export-release "Web" /tmp/wildbound-idle-web/index.html
           test -s /tmp/wildbound-idle-web/index.html
           test -s /tmp/wildbound-idle-web/index.wasm
-          test -s /tmp/wildbound-idle-web/index.pck\n          grep -aFq "v07_bestiary_atlas.webp.base64" /tmp/wildbound-idle-web/index.pck\n          grep -aFq "v07_evolved_bestiary.webp.base64" /tmp/wildbound-idle-web/index.pck
+          test -s /tmp/wildbound-idle-web/index.pck
+          grep -aFq "v07_bestiary_atlas.webp.base64" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "v07_evolved_bestiary.webp.base64" /tmp/wildbound-idle-web/index.pck
       - name: Upload browser-playable build without replacing Pages
         uses: actions/upload-artifact@v4
         with:
