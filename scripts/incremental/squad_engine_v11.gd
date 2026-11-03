@@ -207,7 +207,7 @@ func _rival_hit(index: int) -> void:
         return
     var attack_type: String = String(attacker["kind"])
     var defense_type: String = String(ally_units[target]["kind"])
-    var guardian_scale: float = 0.47 if enemy_is_boss() else 1.28
+    var guardian_scale: float = 0.47 if enemy_is_boss() else 1.90
     var amount: float = enemy_damage()*guardian_scale*multiplier(attack_type,defense_type)
     attacker["target"] = target
     ally_units[target]["hp"] = maxf(0.0,float(ally_units[target]["hp"])-amount)
