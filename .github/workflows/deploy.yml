@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: ["Wildbound creature incremental reboot"]
     types: [completed]
-    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09]
+    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09, feature/wildbound-challenge-loop-v10]
 
 permissions:
   contents: read
@@ -208,6 +208,34 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-site/journey/index.pck"
           test -s "$RUNNER_TEMP/wildbound-site/journey/index.wasm"
           printf 'Wildbound Journey v0.9 Candidate\nSource: %s\n' "$(git -C journey-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/journey/build-info.txt"
+
+      # Stage the tested v0.10 user-controlled progression candidate separately.
+      # No previously approved page or browser save is replaced.
+      - name: Checkout validated v0.10 challenge loop
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-challenge-loop-v10' && github.event.workflow_run.head_sha || 'feature/wildbound-challenge-loop-v10' }}
+          path: challenge-preview
+
+      - name: Isolate v0.10 browser save namespace
+        run: |
+          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_challenge_v10_preview_v1.json/g' challenge-preview/scripts/incremental/engine.gd
+
+      - name: Import and test actual v0.10 player choices
+        run: |
+          godot --headless --path challenge-preview --editor --import --quit
+          godot --headless --path challenge-preview --script res://tests/check_challenge_v10.gd
+
+      - name: Export working v0.10 browser game only to /challenge/
+        run: |
+          mkdir -p "$RUNNER_TEMP/wildbound-site/challenge"
+          godot --headless --path challenge-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/challenge/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/challenge/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/challenge/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/challenge/index.wasm"
+          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/challenge/index.pck"
+          grep -aFq "v07_evolved_bestiary.webp.base64" "$RUNNER_TEMP/wildbound-site/challenge/index.pck"
+          printf 'Wildbound Challenge v0.10\nSource: %s\n' "$(git -C challenge-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/challenge/build-info.txt"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
