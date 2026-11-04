@@ -3,7 +3,7 @@ config_version=5
 
 [application]
 config/name="Wildbound: Creature Ascension v0.30"
-run/main_scene="res://scenes/duel/wildbound_duel_v33.tscn"
+run/main_scene="res://scenes/duel/wildbound_duel_v34.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [display]

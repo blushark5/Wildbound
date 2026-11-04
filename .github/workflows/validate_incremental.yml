@@ -35,10 +35,11 @@ jobs:
 
       - name: Verify core gameplay and latest visual interactions
         run: |
-          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v33.tscn"' project.godot
+          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v34.tscn"' project.godot
           timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v32.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v33.gd
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v34.gd
 
       - name: Verify game starts
         run: timeout 60s godot --headless --path . --quit-after 20
@@ -50,4 +51,13 @@ jobs:
           test -s "$RUNNER_TEMP/duel-test/index.html"
           test -s "$RUNNER_TEMP/duel-test/index.pck"
           test -s "$RUNNER_TEMP/duel-test/index.wasm"
-          grep -aFq 'duel_ui_v33' "$RUNNER_TEMP/duel-test/index.pck"
+          grep -aFq 'duel_ui_v34' "$RUNNER_TEMP/duel-test/index.pck"
+
+      - name: Capture illustrated v0.34 Godot game screens
+        run: xvfb-run -a godot --path . --script res://tests/capture_duel_v34.gd
+
+      - name: Archive rendered fidelity screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v34-illustrated-battles
+          path: Docs/QA/wildbound_v34_*.png
