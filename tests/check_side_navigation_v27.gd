@@ -70,7 +70,8 @@ func _verify() -> void:
         _fail("Quest continues to clutter Gold purchases");return
     ui._show_section("NEST")
     if ui.tab != "NEST" or not ui.get_node("SidebarScroll").visible:
-        _fail("Nest hatch/relic screen not accessible as side tab");return
+        _fail("Nest hatch/relic screen not accessible as side tab: tab=%s, section=%s, scroll=%s, drawer=%s" % [
+            ui.tab,ui.menu_section,str(ui.get_node("SidebarScroll").visible),str(ui.drawer_open)]);return
     ui._show_section("LEGACY")
     if ui.tab != "LEGACY" or not ui.get_node("SidebarScroll").visible:
         _fail("Ascension and permanent research not accessible");return
