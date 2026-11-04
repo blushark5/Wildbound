@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: wildbound-v30-duel-validation
+  group: wildbound-v32-duel-validation
   cancel-in-progress: true
 
 jobs:
