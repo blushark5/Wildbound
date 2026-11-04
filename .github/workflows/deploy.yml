@@ -363,12 +363,14 @@ jobs:
           # constant because changing it risks resetting Godot Web save storage.
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          output = Path(__import__('os').environ['RUNNER_TEMP']) / 'wildbound-site/duel/index.html'
+          import os
+          output = Path(os.environ['RUNNER_TEMP']) / 'wildbound-site/duel/index.html'
           html = output.read_text(encoding='utf-8')
-          patched, count = re.subn(r'(<title>)[\\s\\S]*?(</title>)', r'\\1Wildbound: Creature Ascension v0.32\\2', html, count=1, flags=re.IGNORECASE)
-          if count != 1:
-              raise RuntimeError('Godot HTML title was missing; not publishing a mislabeled build')
+          opening = html.find('<title>')
+          closing = html.find('</title>', opening)
+          if opening < 0 or closing < 0:
+              raise RuntimeError('Godot HTML title missing; refusing stale version label')
+          patched = html[:opening] + '<title>Wildbound: Creature Ascension v0.32</title>' + html[closing + len('</title>'):]
           output.write_text(patched, encoding='utf-8')
           assert '<title>Wildbound: Creature Ascension v0.32</title>' in patched
           PY
