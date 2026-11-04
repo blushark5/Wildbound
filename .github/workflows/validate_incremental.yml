@@ -55,6 +55,16 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/check_side_navigation_v27.gd
       - name: Validate v0.28 Play First minimal actions, menu training, farming and Ascension
         run: timeout 90s godot --headless --path . --script res://tests/check_simple_home_v28.gd
+      - name: Validate v0.30 three creatures, true elemental 1v1 combat and minimal UI
+        run: timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
+      - name: Render the actual v0.30 starter, duel, upgrades and Ascension
+        run: xvfb-run -a godot --path . --script res://tests/capture_duel_v30.gd
+      - name: Archive v0.30 focused creature RPG screens
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v30-original-three-creature-duel
+          path: Docs/QA/wildbound_v30_*.png
+
       - name: Validate v0.29 genuine Clicker-style creature training, battle, saves and menus
         run: timeout 90s godot --headless --path . --script res://tests/check_clicker_v29.gd
       - name: Capture real v0.29 start, battles, team, menu and farming screens
