@@ -31,12 +31,12 @@ jobs:
     timeout-minutes: 15
     environment:
       name: github-pages
-      url: \${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out validated current duel
         uses: actions/checkout@v4
         with:
-          ref: \${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'feature/wildbound-bond-sprite-v14' }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'feature/wildbound-bond-sprite-v14' }}
 
       - name: Install Godot with Web export templates
         uses: chickensoft-games/setup-godot@v2
@@ -68,8 +68,8 @@ jobs:
 
       - name: Stamp version into public pages without touching player saves
         env:
-          SITE_ROOT: \${{ runner.temp }}/wildbound-site
-          SOURCE_SHA: \${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          SITE_ROOT: ${{ runner.temp }}/wildbound-site
+          SOURCE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -109,7 +109,7 @@ jobs:
       - name: Upload Pages site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: \${{ runner.temp }}/wildbound-site
+          path: ${{ runner.temp }}/wildbound-site
 
       - name: Publish site
         id: deployment
