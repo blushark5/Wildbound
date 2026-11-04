@@ -485,8 +485,19 @@ func _set_drawer_visibility(show: bool) -> void:
     for k in menu_buttons:
         var button: Button = menu_buttons[k]
         button.visible = show
-        _skin_button(button,GOLD_TONE if menu_section == k else MINT_TONE,
-            menu_section == k)
+        var selected: bool = menu_section == k
+        var edge: Color = GOLD_TONE if selected else MINT_TONE
+        var normal := _glass(Color("#3b554c") if selected else Color("#153746"),
+            edge,6,1)
+        normal.content_margin_left = 3.0
+        normal.content_margin_right = 3.0
+        button.add_theme_stylebox_override("normal",normal)
+        var hover := _glass(Color("#42636d"),edge.lightened(0.16),6,1)
+        hover.content_margin_left = 3.0
+        hover.content_margin_right = 3.0
+        button.add_theme_stylebox_override("hover",hover)
+        button.add_theme_font_size_override("font_size",9)
+        button.size = Vector2(54,37)
     team_page.visible = show and menu_section == "TEAM"
     tools_page.visible = show and menu_section == "TOOLS"
     saves_page.visible = show and menu_section == "SAVE"
