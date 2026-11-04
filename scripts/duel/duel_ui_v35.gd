@@ -173,8 +173,12 @@ func _recompose_battle35() -> void:
     _place35(notice_text,Vector2(341,596),Vector2(609,24))
     notice_text.add_theme_font_size_override("font_size",12)
     notice_text.add_theme_constant_override("outline_size",4)
-    _panel(self,"PremiumCommandShelf35",Rect2(0,614,1280,106),
-        Color("#0a1829",0.95),Color("#c39f64",0.95),0,2)
+    var command_shelf: Panel = _panel(self,"PremiumCommandShelf35",
+        Rect2(0,614,1280,106),Color("#0a1829",0.95),
+        Color("#c39f64",0.95),0,2)
+    # Godot draws siblings in order; the shelf must be BEFORE the
+    # inherited action buttons, otherwise it would cover live controls.
+    move_child(command_shelf,next_button.get_index())
     # Move existing working actions on top of the shelf.
     _place35(next_button,Vector2(350,639),Vector2(361,67))
     _place35(farm_button,Vector2(724,639),Vector2(235,67))
