@@ -55,6 +55,16 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/check_side_navigation_v27.gd
       - name: Validate v0.28 Play First minimal actions, menu training, farming and Ascension
         run: timeout 90s godot --headless --path . --script res://tests/check_simple_home_v28.gd
+      - name: Validate v0.29 genuine Clicker-style creature training, battle, saves and menus
+        run: timeout 90s godot --headless --path . --script res://tests/check_clicker_v29.gd
+      - name: Capture real v0.29 start, battles, team, menu and farming screens
+        run: xvfb-run -a godot --path . --script res://tests/capture_clicker_v29.gd
+      - name: Archive v0.29 rendered UI screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v29-clicker-gameplay
+          path: Docs/QA/wildbound_v29_*.png
+
       - name: Validate polished illustrated world and full-screen Field Guide
         run: timeout 60s godot --headless --path . --script res://tests/check_visual_v13.gd
       - name: Validate four-element collection, distinct owned individuals and earned hatches
