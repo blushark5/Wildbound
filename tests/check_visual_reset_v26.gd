@@ -27,6 +27,22 @@ func _verify() -> void:
         _fail("Full-width cinematic battle view was not installed");return
     if ui.get_node("PackPanel").size.x < 1200 or ui.slot_markers.size() != 3:
         _fail("Three large team cards missing from new full-width layout");return
+    # v0.14's animation rig uses separate ally_base/rival_base vectors.
+    # Reflowing only the static portrait would appear correct for one
+    # frame, then animate enemy art back onto the allied side.
+    ui._animate_fighters()
+    for i in range(3):
+        var ally_art: TextureRect = ui.ally_widgets[i]["portrait"]
+        var foe_art: TextureRect = ui.rival_widgets[i]["portrait"]
+        if absf(ally_art.position.x-ui.ALLY_POS[i]) > 39:
+            _fail("Animated ally sprite escaped its intended wide-arena slot");return
+        if absf(foe_art.position.x-ui.FOE_POS[i]) > 39:
+            _fail("Animated enemy sprite moved onto allied side or wrong panel");return
+        if not ui.ally_base[i].is_equal_approx(Vector2(ui.ALLY_POS[i],229)):
+            _fail("Sprite animation base was not updated with the battle reflow");return
+        var photo: TextureRect = ui.card_art[String(ui.CHALLENGE.ORDER[i])]
+        if photo.position.y < 486 or photo.position.y > 495:
+            _fail("Animated team card portrait is clipping outside new frame");return
     if not is_instance_valid(ui.arena_emblem) or ui.arena_emblem.texture == null:
         _fail("New original battle sigil missing");return
     if ui.autoform_button.visible or ui.replay_button.visible or ui.type_size_button.visible:
