@@ -51,6 +51,8 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/check_interface_v25.gd
       - name: Validate v0.26 full-width battle, deliberate shop drawer, tactics menu and saved-game recovery
         run: timeout 90s godot --headless --path . --script res://tests/check_visual_reset_v26.gd
+      - name: Validate v0.27 unified top tabs and side drawer for all seven menus
+        run: timeout 90s godot --headless --path . --script res://tests/check_side_navigation_v27.gd
       - name: Validate polished illustrated world and full-screen Field Guide
         run: timeout 60s godot --headless --path . --script res://tests/check_visual_v13.gd
       - name: Validate four-element collection, distinct owned individuals and earned hatches
@@ -135,6 +137,14 @@ jobs:
 
       - name: Print compact real-game art thumbnails for visual QA
         run: xvfb-run -a godot --path . --script res://tests/preview_visual_v13.gd
+
+      - name: Capture v0.27 actual Godot side navigation for team, gold, world, tools, saves, and battlefield
+        run: xvfb-run -a godot --path . --script res://tests/capture_side_navigation_v27.gd
+      - name: Archive v0.27 actual top tab and side panel screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v27-unified-sidebar-and-top-tabs
+          path: Docs/QA/wildbound_v27_*.png
 
       - name: Capture v0.26 full living arena, slide-out upgrades, optional tactics and Field Guide
         run: xvfb-run -a godot --path . --script res://tests/capture_visual_reset_v26.gd
@@ -270,6 +280,7 @@ jobs:
           grep -aFq "bond_engine_v25.gd" /tmp/wildbound-idle-web/index.pck
           grep -aFq "bond_ui_v25.gd" /tmp/wildbound-idle-web/index.pck
           grep -aFq "bond_ui_v26.gd" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "bond_ui_v27.gd" /tmp/wildbound-idle-web/index.pck
           grep -aFq "duel_sigil.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "icon_fire.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "icon_water.svg" /tmp/wildbound-idle-web/index.pck
