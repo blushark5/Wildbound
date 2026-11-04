@@ -35,9 +35,10 @@ jobs:
 
       - name: Verify core gameplay and latest visual interactions
         run: |
-          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v32.tscn"' project.godot
+          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v33.tscn"' project.godot
           timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v32.gd
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v33.gd
 
       - name: Verify game starts
         run: timeout 60s godot --headless --path . --quit-after 20
@@ -49,4 +50,4 @@ jobs:
           test -s "$RUNNER_TEMP/duel-test/index.html"
           test -s "$RUNNER_TEMP/duel-test/index.pck"
           test -s "$RUNNER_TEMP/duel-test/index.wasm"
-          grep -aFq 'duel_ui_v32' "$RUNNER_TEMP/duel-test/index.pck"
+          grep -aFq 'duel_ui_v33' "$RUNNER_TEMP/duel-test/index.pck"
