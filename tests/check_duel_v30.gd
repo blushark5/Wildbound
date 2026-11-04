@@ -19,7 +19,7 @@ func _run() -> void:
     var had: bool = FileAccess.file_exists(path)
     if had:
         previous = FileAccess.get_file_as_string(path)
-    var engine: RefCounted = ENGINE.new()
+    var engine = ENGINE.new()
     if engine.ORDER.size() != 3 or engine.SPECIES.size() != 3:
         _fail("Exactly 3 species required");return
     if engine.BEATS != {"Fire":"Earth","Earth":"Water","Water":"Fire"}:
@@ -89,7 +89,7 @@ func _run() -> void:
         _fail("After Ascension, battles must start normally");return
     engine.gold = 273.0
     engine.save()
-    var restored: RefCounted = ENGINE.new()
+    var restored = ENGINE.new()
     if not restored.load() or restored.gold != 273.0 or restored.ascensions != 1:
         _fail("Persistence loses progress");return
     # The new Godot scene must show actual creature sprites and functional actions.
