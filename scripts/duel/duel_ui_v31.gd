@@ -8,7 +8,7 @@ const WARM_GOLD: Color = Color("#f8cf72")
 const FIRE_RED: Color = Color("#b74626")
 const EMERALD: Color = Color("#30a663")
 var art31_ready: bool = false
-var fx31: Control
+var fx31
 var trim31: TextureRect
 var victory31: Panel
 var victory31_title: Label
@@ -89,7 +89,7 @@ func _install_production_art() -> void:
         _style(Color("#152b37",0.97),Color("#b8f4c2"),12,2,4))
     enemy_hp_bar.color = Color("#ee6348")
     hero_hp_bar.color = Color("#4bcf78")
-    (get_node("DrawerBackground") as Panel).add_theme_stylebox_override("panel",
+    (get_node("MenuDrawer/DrawerBackground") as Panel).add_theme_stylebox_override("panel",
         _style(Color("#13263a",0.99),WARM_GOLD,18,2,7))
 
     var label_names: Array[String] = ["Logo","TrainingTitle","StageTitle",
