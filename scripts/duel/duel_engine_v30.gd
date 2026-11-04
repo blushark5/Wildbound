@@ -120,7 +120,8 @@ func is_boss() -> bool:
 
 func _spawn() -> void:
     # Three original elements only, including enemies at every stage.
-    opponent = ORDER[(stage-1)%ORDER.size()]
+    var enemy_rotation: Array[String] = ["brinlet","cindlet","spriglet"]
+    opponent = enemy_rotation[(stage-1)%enemy_rotation.size()]
     var scalar: float = 4.0 if is_boss() else 1.0
     enemy_max_hp = (32.0*pow(1.235,float(stage-1))+float(stage)*3.0)*scalar
     enemy_hp = enemy_max_hp
