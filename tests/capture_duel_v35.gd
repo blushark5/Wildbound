@@ -48,6 +48,12 @@ func _run() -> void:
     await _settle()
     _shot(view,"victory")
     ui.game.new_game()
+    # Isolate the guardian state from the previous victory capture.
+    # Winning overlay timers belong to the UI, not the saved battle state.
+    ui.victory31_left = 0.0
+    ui.victory31.hide()
+    ui.ribbon_timer32 = 0.0
+    ui.stage_ribbon32.hide()
     ui.game.stage = 5
     ui.game._spawn()
     ui.game.start()
