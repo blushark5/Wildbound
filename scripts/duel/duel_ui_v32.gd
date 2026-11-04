@@ -39,6 +39,8 @@ func _ready() -> void:
     _build_stage_ribbon32()
     _tune_game_buttons32()
     # Player-facing build label. Leave Godot config/name unchanged so browser saves survive.
+    # Runtime window title overrides the preserved internal Godot project name.
+    DisplayServer.window_set_title("Wildbound: Creature Ascension v0.32")
     var version_tag: Label = get_node("Tagline") as Label
     version_tag.text = "CREATURES  •  ELEMENTS  •  ASCENSION     v0.32"
     version_tag.add_theme_color_override("font_color",Color("#bfe8cf"))
