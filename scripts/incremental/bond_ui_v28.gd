@@ -305,8 +305,16 @@ func _activate_resonance() -> void:
     _update_skills_panel()
 
 func _toggle_play_speed() -> void:
-    _speed()
+    # v0.10 repurposed the inherited _speed() action to toggle optional
+    # Auto-Advance, but v0.26 still labeled it SPEED. This control now
+    # explicitly changes real engine simulation speed (1× / 2×), not
+    # Auto-Advance. Those distinct options remain in TOOLS.
+    if game == null:
+        return
+    game.game_speed = 2.0 if game.game_speed < 2.0 else 1.0
     game.save()
+    _toast("BATTLE SPEED • %dx" % int(game.game_speed))
+    _refresh()
     _update_skills_panel()
 
 func _toggle_main_menu() -> void:
