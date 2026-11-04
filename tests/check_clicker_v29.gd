@@ -19,7 +19,7 @@ func _run() -> void:
     await process_frame
     if not ui.clicker29_ready or not ui.clicker29_layer.visible:
         _fail("Real clicker interface not built");return
-    if not ui.strike_button.visible == false or not ui.action29.visible:
+    if ui.strike_button.visible or not ui.action29.visible:
         _fail("Original clutter still visible or primary battle missing");return
     if not ui.menu28_button.visible or ui.drawer_open:
         _fail("Menu should be visible and closed on launch");return
