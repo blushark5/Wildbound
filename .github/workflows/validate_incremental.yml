@@ -1,327 +1,56 @@
 name: Wildbound creature incremental reboot
+
+# v0.30 hard scope reset: only the real 3-creature 1v1 game is under active
+# production. Preserve archived v0.14–29 source, but do not spend minutes
+# validating old screenshots and mechanics on every tiny polish iteration.
 on:
   push:
     branches: [feature/wildbound-bond-sprite-v14]
   workflow_dispatch:
 
-# Each feature-branch commit triggers validation; obsolete queued runs should
-# never consume runners or delay the latest vetted game build.
-concurrency:
-  group: wildbound-v20-elemental-qol-validation
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
+concurrency:
+  group: wildbound-v30-duel-validation
+  cancel-in-progress: true
+
 jobs:
   godot-reboot:
+    name: Validate and export Wildbound Duel
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout isolated reboot branch
+      - name: Check out three-creature duel game
         uses: actions/checkout@v4
-      - name: Install Godot 4.7.2 and Web templates
+      - name: Install Godot 4.7.2 with Web templates
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.7.2
           use-dotnet: false
           include-templates: true
-      - name: Import assets and check GDScript
+      - name: Import original creature art and verify all scripts
         run: godot --headless --path . --editor --import --quit
-      - name: Validate Bond Rank ceiling, individual Gold purchases and animated creatures
-        run: timeout 60s godot --headless --path . --script res://tests/check_bond_v14.gd
-      - name: Assert first-clear Essence, farming actions and all 12 sprite families
-        run: timeout 60s godot --headless --path . --script res://tests/check_iteration_v15.gd
-      - name: Assert exact starter restoration and 18 painted expanded-species portraits
-        run: timeout 60s godot --headless --path . --script res://tests/check_painted_v16.gd
-      - name: Validate v0.18 random starters, stage seeds, three-form art, Essence and legacy saves
-        run: timeout 90s godot --headless --path . --script res://tests/check_roster_v18.gd
-      - name: Validate v0.19 new game, 3 save slots, explicit first battle, Ascension access
-        run: timeout 90s godot --headless --path . --script res://tests/check_saves_v19.gd
-      - name: Validate v0.20 clear element icons, stage winner history, safe farming and direct push
-        run: timeout 90s godot --headless --path . --script res://tests/check_farm_icons_v20.gd
-      - name: Validate v0.21 compact mobile guide, integer DPS and exact Gold upgrade effects
-        run: timeout 90s godot --headless --path . --script res://tests/check_readability_v21.gd
-      - name: Validate v0.22 Ascension auto-form lifetime cap, exact bulk Gold, and tactical UI
-        run: timeout 90s godot --headless --path . --script res://tests/check_tactical_ascension_v22.gd
-      - name: Validate v0.23 historical Replay, 3 presets, permanent Echo research and save switching
-        run: timeout 90s godot --headless --path . --script res://tests/check_replay_presets_v23.gd
-      - name: Validate v0.24 actual Ascension restart, paused-save recovery, and cleared mobile controls
-        run: timeout 90s godot --headless --path . --script res://tests/check_ascension_recovery_v24.gd
-      - name: Validate v0.25 collapsible quest, readable Field Guide, touch targets, slot preferences and continued Ascension
-        run: timeout 90s godot --headless --path . --script res://tests/check_interface_v25.gd
-      - name: Validate v0.26 full-width battle, deliberate shop drawer, tactics menu and saved-game recovery
-        run: timeout 90s godot --headless --path . --script res://tests/check_visual_reset_v26.gd
-      - name: Validate v0.27 unified top tabs and side drawer for all seven menus
-        run: timeout 90s godot --headless --path . --script res://tests/check_side_navigation_v27.gd
-      - name: Validate v0.28 Play First minimal actions, menu training, farming and Ascension
-        run: timeout 90s godot --headless --path . --script res://tests/check_simple_home_v28.gd
-      - name: Validate v0.30 three creatures, true elemental 1v1 combat and minimal UI
+      - name: Test actual 1v1 elemental combat, training, farming, bosses and Ascension
         run: timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
-      - name: Render the actual v0.30 starter, duel, upgrades and Ascension
+      - name: Start the new game scene and catch initialization failures
+        run: timeout 60s godot --headless --path . --quit-after 30
+      - name: Capture five full-size Godot UI screenshots
         run: xvfb-run -a godot --path . --script res://tests/capture_duel_v30.gd
-      - name: Archive v0.30 focused creature RPG screens
+      - name: Archive rendered duel and upgrades for visual QA
         uses: actions/upload-artifact@v4
         with:
-          name: wildbound-v30-original-three-creature-duel
+          name: wildbound-v30-duel-screen-review
           path: Docs/QA/wildbound_v30_*.png
-
-      - name: Validate v0.29 genuine Clicker-style creature training, battle, saves and menus
-        run: timeout 90s godot --headless --path . --script res://tests/check_clicker_v29.gd
-      - name: Capture real v0.29 start, battles, team, menu and farming screens
-        run: xvfb-run -a godot --path . --script res://tests/capture_clicker_v29.gd
-      - name: Archive v0.29 rendered UI screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v29-clicker-gameplay
-          path: Docs/QA/wildbound_v29_*.png
-
-      - name: Validate polished illustrated world and full-screen Field Guide
-        run: timeout 60s godot --headless --path . --script res://tests/check_visual_v13.gd
-      - name: Validate four-element collection, distinct owned individuals and earned hatches
-        run: timeout 45s godot --headless --path . --script res://tests/check_collection_v12.gd
-      - name: Validate six real creatures, elemental targeting and trainer battle choices
-        run: timeout 45s godot --headless --path . --script res://tests/check_squads_v11.gd
-      - name: Validate progression, persistent evolution and interface
-        run: godot --headless --path . --script res://tests/check_incremental.gd
-      - name: Validate full alpha engine, migration and interface
-        run: godot --headless --path . --script res://tests/check_alpha.gd
-      - name: Validate v0.3 tactics, elite enemies, contracts, camp and migration
-        run: godot --headless --path . --script res://tests/check_v03.gd
-      - name: Validate v0.4 specialization, combo, Guardian fury, caches and save migration
-        run: godot --headless --path . --script res://tests/check_v04.gd
-      - name: Validate original artwork integration and interactive battle UI
-        run: godot --headless --path . --script res://tests/check_visual_v05.gd
-      - name: Validate three-creature visual v0.6 battle and legacy UI
-        run: godot --headless --path . --script res://tests/check_visual_v06.gd
-      - name: Assert rebuilt v0.7 layout, combat controls and party presentation
-        run: godot --headless --path . --script res://tests/check_visual_v07.gd
-      - name: Render larger v0.7 battle-first interface
-        run: xvfb-run -a godot --path . --script res://tests/capture_visual_v07.gd
-      - name: Save genuine v0.7 rendered visual for review
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v07-layout-review
-          path: Docs/QA/wildbound_visual_v07*.png
-
-      - name: Validate v0.8 battle HUD, tactical shortcuts, and Guardian tracking
-        run: godot --headless --path . --script res://tests/check_visual_v08.gd
-      - name: Render genuine v0.8 starter and Guardian screenshots
-        run: xvfb-run -a godot --path . --script res://tests/capture_visual_v08.gd
-      - name: Archive genuine v0.8 screenshots for visual approval
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v08-battle-experience-qa
-          path: Docs/QA/wildbound_visual_v08*.png
-
-      - name: Validate real journey milestones, creature purchases, legacy systems
-        run: godot --headless --path . --script res://tests/check_journey_v09.gd
-      - name: Capture v0.9 opening journey and Guardian battle
-        run: xvfb-run -a godot --path . --script res://tests/capture_journey_v09.gd
-      - name: Archive rendered v0.9 gameplay for design approval
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v09-real-screenshots
-          path: Docs/QA/wildbound_journey_v09*.png
-
-      - name: Validate real challenge loop and creature mechanics
-        run: godot --headless --path . --script res://tests/check_challenge_v10.gd
-      - name: Render actual combat, Guardian and stage-choice screenshots
-        run: xvfb-run -a godot --path . --script res://tests/capture_challenge_v10.gd
-      - name: Archive real v0.10 gameplay screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v10-real-gameplay
-          path: Docs/QA/wildbound_v10_*.png
-
-      - name: Render v0.11 mono, mixed and Guardian trainer squads
-        run: xvfb-run -a godot --path . --script res://tests/capture_squads_v11.gd
-      - name: Save v0.11 genuine six-sprite combat screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v11-live-squads
-          path: Docs/QA/wildbound_v11_*.png
-
-      - name: Render genuine collection, unique starter and mixed team scenes
-        run: xvfb-run -a godot --path . --script res://tests/capture_collection_v12.gd
-      - name: Archive actual v0.12 unique collection game screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v12-unique-collection
-          path: Docs/QA/wildbound_v12_*.png
-
-      - name: Capture actual v0.13 duel arena and Field Guide screenshots
-        run: xvfb-run -a godot --path . --script res://tests/capture_visual_v13.gd
-      - name: Archive real v0.13 UI visual review
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v13-visual-world
-          path: Docs/QA/wildbound_v13_*.png
-
-      - name: Print compact real-game art thumbnails for visual QA
-        run: xvfb-run -a godot --path . --script res://tests/preview_visual_v13.gd
-
-      - name: Capture v0.28 calm start, battle, main menu, training, abilities and farming
-        run: xvfb-run -a godot --path . --script res://tests/capture_simple_home_v28.gd
-      - name: Archive real v0.28 beginner-friendly interface screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v28-play-first-simple-interface
-          path: Docs/QA/wildbound_v28_*.png
-
-      - name: Capture v0.27 actual Godot side navigation for team, gold, world, tools, saves, and battlefield
-        run: xvfb-run -a godot --path . --script res://tests/capture_side_navigation_v27.gd
-      - name: Archive v0.27 actual top tab and side panel screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v27-unified-sidebar-and-top-tabs
-          path: Docs/QA/wildbound_v27_*.png
-
-      - name: Capture v0.26 full living arena, slide-out upgrades, optional tactics and Field Guide
-        run: xvfb-run -a godot --path . --script res://tests/capture_visual_reset_v26.gd
-      - name: Archive v0.26 actual Godot visual overhaul screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v26-full-width-arena-visual-review
-          path: Docs/QA/wildbound_v26_*.png
-
-      - name: Capture v0.25 compact and expanded layout, larger fonts, Field Guide and Ascension shop
-        run: xvfb-run -a godot --path . --script res://tests/capture_interface_v25.gd
-      - name: Archive v0.25 real Godot interface screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v25-mobile-interface-review
-          path: Docs/QA/wildbound_v25_*.png
-
-      - name: Capture v0.24 real Ascension restart, RESUME BATTLE and clean Field Guide
-        run: xvfb-run -a godot --path . --script res://tests/capture_ascension_recovery_v24.gd
-      - name: Archive v0.24 verified battle restart and UI cleanup screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v24-ascension-recovery-and-clean-UI
-          path: Docs/QA/wildbound_v24_*.png
-
-      - name: Capture actual v0.23 Replay Route, Field Guide presets, Echo research and Chronicle
-        run: xvfb-run -a godot --path . --script res://tests/capture_replay_presets_v23.gd
-      - name: Archive v0.23 real gameplay UI screenshot review
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v23-replay-presets-chronicle
-          path: Docs/QA/wildbound_v23_*.png
-
-      - name: Capture v0.22 mobile tactical battle, matchup, Ascension rewards and bulk buying
-        run: xvfb-run -a godot --path . --script res://tests/capture_tactical_ascension_v22.gd
-      - name: Archive actual v0.22 tactical battle and Ascension screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v22-tactical-autoform-and-ascension
-          path: Docs/QA/wildbound_v22_*.png
-
-      - name: Capture v0.21 wrapped guide and Gold upgrade math
-        run: xvfb-run -a godot --path . --script res://tests/capture_readability_v21.gd
-      - name: Archive v0.21 screenshot review for wrapped guide and upgrade details
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v21-guide-and-upgrades
-          path: Docs/QA/wildbound_v21_*.png
-
-      - name: Render v0.20 element-marked battle, squad guide and farm picker
-        run: xvfb-run -a godot --path . --script res://tests/capture_farm_icons_v20.gd
-      - name: Archive v0.20 real squad and stage picker screenshot review
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v20-element-icons-and-safe-farming
-          path: Docs/QA/wildbound_v20_*.png
-
-      - name: Render v0.19 real start gate, save manager, and Ascension shortcut
-        run: xvfb-run -a godot --path . --script res://tests/capture_saves_v19.gd
-      - name: Archive v0.19 genuine menu and first-battle UX screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v19-saves-and-first-battle
-          path: Docs/QA/wildbound_v19_*.png
-
-      - name: Capture new v0.18 twelve-line team, guardian, mythic artwork and Field Guide
-        run: xvfb-run -a godot --path . --script res://tests/capture_roster_v18.gd
-      - name: Archive full real v0.18 art and stage screenshot review
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v18-elemental-roster-review
-          path: Docs/QA/wildbound_v18_*.png
-
-      - name: Render actual v0.14 creature attacks, bond ranks and contextual buttons
-        run: xvfb-run -a godot --path . --script res://tests/capture_bond_v14.gd
-      - name: Archive original v0.14 animated sprite and prestige QA screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v14-bond-and-creature-sprites
-          path: Docs/QA/wildbound_v14_*.png
-
-      - name: Startup smoke test
-        run: godot --headless --path . --quit-after 10
-      - name: Capture actual rendered scene for visual review
+      - name: Export browser-playable v0.30
         run: |
-          if ! command -v Xvfb >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y xvfb; fi
-          xvfb-run -a godot --path . --script res://tests/capture_incremental.gd
-      - name: Render real Alpha screenshot
-        run: xvfb-run -a godot --path . --script res://tests/capture_alpha.gd
-      - name: Archive Alpha screenshot for visual review
+          mkdir -p "$RUNNER_TEMP/wildbound-v30"
+          godot --headless --path . --export-release "Web" "$RUNNER_TEMP/wildbound-v30/index.html"
+          test -s "$RUNNER_TEMP/wildbound-v30/index.html"
+          test -s "$RUNNER_TEMP/wildbound-v30/index.wasm"
+          test -s "$RUNNER_TEMP/wildbound-v30/index.pck"
+          grep -aFq 'duel_engine_v30' "$RUNNER_TEMP/wildbound-v30/index.pck"
+      - name: Archive actual web build
         uses: actions/upload-artifact@v4
         with:
-          name: wildbound-alpha-rendered-qa
-          path: Docs/QA/wildbound_alpha.png
-      - name: Capture real redesigned v0.6 stage
-        run: xvfb-run -a godot --path . --script res://tests/capture_visual_v06.gd
-      - name: Publish v0.6 rendered screenshot for review
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-v06-stage-visual-qa
-          path: Docs/QA/wildbound_visual_v06.png
-      - name: Upload actual screenshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-creature-ascension-visual-qa
-          path: Docs/QA/wildbound_incremental.png
-      - name: Export browser-playable game
-        run: |
-          mkdir -p /tmp/wildbound-idle-web
-          godot --headless --path . --export-release "Web" /tmp/wildbound-idle-web/index.html
-          test -s /tmp/wildbound-idle-web/index.html
-          test -s /tmp/wildbound-idle-web/index.wasm
-          test -s /tmp/wildbound-idle-web/index.pck
-          grep -aFq "v07_bestiary_atlas.webp.base64" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "arena_air.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "nest_egg.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "zephlet_attack.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "new9_base.webp.base64" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "new9_evolved.webp.base64" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "v18/base.webp.base64" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "v18/evolved.webp.base64" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "v18/ascended.webp.base64" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "save_slots_v19.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v19.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_engine_v20.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v21.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_engine_v22.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v22.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_engine_v23.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v23.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_engine_v24.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v24.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_engine_v25.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v25.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v26.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v27.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "bond_ui_v28.gd" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "duel_sigil.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "icon_fire.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "icon_water.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "icon_earth.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "icon_air.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "gustling_evolved_idle.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "fx_fire.svg" /tmp/wildbound-idle-web/index.pck
-          grep -aFq "v07_evolved_bestiary.webp.base64" /tmp/wildbound-idle-web/index.pck
-      - name: Upload browser-playable build without replacing Pages
-        uses: actions/upload-artifact@v4
-        with:
-          name: wildbound-creature-ascension-browser-prototype
-          path: /tmp/wildbound-idle-web/
+          name: wildbound-v30-browser-build
+          path: \${{ runner.temp }}/wildbound-v30/
