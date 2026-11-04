@@ -41,6 +41,15 @@ jobs:
         with:
           name: wildbound-v31-art-review
           path: Docs/QA/wildbound_v31_*.png
+      - name: Verify v0.32 1v1 battle feedback, stage reveals and guardian progress
+        run: timeout 90s godot --headless --path . --script res://tests/check_duel_v32.gd
+      - name: Render real v0.32 visual QA captures
+        run: xvfb-run -a godot --path . --script res://tests/capture_duel_v32.gd
+      - name: Upload v0.32 visual QA screens
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v32-art-and-gameplay-review
+          path: Docs/QA/wildbound_v32_*.png
       - name: Start the new game scene and catch initialization failures
         run: timeout 60s godot --headless --path . --quit-after 30
       - name: Capture five full-size Godot UI screenshots
@@ -59,6 +68,7 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-v30/index.pck"
           grep -aFq 'duel_engine_v30' "$RUNNER_TEMP/wildbound-v30/index.pck"
           grep -aFq 'duel_ui_v31' "$RUNNER_TEMP/wildbound-v30/index.pck"
+          grep -aFq 'duel_ui_v32' "$RUNNER_TEMP/wildbound-v30/index.pck"
       - name: Archive actual web build
         uses: actions/upload-artifact@v4
         with:
