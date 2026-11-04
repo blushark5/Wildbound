@@ -108,17 +108,15 @@ func _verify() -> void:
     ui.guide_dialog.hide()
     ui._open_codex()
     ui._refresh_codex()
-    if ui.codex_layer.get_node("SelectSlotPrompt").text != "REPLACE SLOT 1":
+    var initial_slot: int = ui.chosen_slot
+    if ui.codex_layer.get_node("SelectSlotPrompt").text != "REPLACE SLOT %d" % (initial_slot+1):
         _fail("Field Guide doesn't tell the player which squad slot is being replaced");return
-    var named: Dictionary = {}
-    for kind in ui.game.squad_slots:
-        named[kind] = true
     for i in range(3):
         var id: String = String(ui.game.squad_slots[i])
         var action: Button = ui.codex_cards[id]["action"]
-        if i == 0 and (not action.disabled or not action.text.contains("IN SLOT 1")):
+        if i == initial_slot and (not action.disabled or not action.text.contains("IN SLOT %d" % (initial_slot+1))):
             _fail("Selected owned slot still has confusing MOVE HERE copy");return
-        if i > 0 and (action.disabled or not action.text.contains("SWAP INTO SLOT 1")):
+        if i != initial_slot and (action.disabled or not action.text.contains("SWAP INTO SLOT %d" % (initial_slot+1))):
             _fail("Other equipped creature lacks clear swap-to-slot action");return
     for element in ["Earth","Water","Fire","Air"]:
         var n: int = 0
