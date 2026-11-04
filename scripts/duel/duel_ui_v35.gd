@@ -55,13 +55,18 @@ func _recompose_battle35() -> void:
     for name in ["MainHeader","TrainingPanel","TrainingTitle",
             "TrainingDescription","ElementGuide","ElementGuideTitle",
             "ElementGuide1","ElementGuide2","ProgressChip",
-            "InfoStrip","FooterHelp","DuelWindow"]:
+            "InfoStrip","FooterHelp","DuelWindow","ProgressLabel",
+            "ElementIcon_cindlet","ElementIcon_brinlet","ElementIcon_spriglet"]:
         _hide35(name)
     for kind in DUEL.ORDER:
         var row: Dictionary = roster_rows[kind]
         for item in ["shell","frame","image","name","info","choose","spend"]:
             (row[item] as CanvasItem).hide()
     trim31.hide()
+    # The legacy drawer stays operational, but its long heading must fit
+    # before the Back and Close buttons on a 1280px canvas.
+    _place35(menu_heading,Vector2(855,126),Vector2(169,38))
+    menu_heading.add_theme_font_size_override("font_size",18)
     landscape.position = Vector2(0,0)
     landscape.size = Vector2(1280,720)
     landscape.stretch_mode = TextureRect.STRETCH_SCALE
@@ -170,7 +175,7 @@ func _recompose_battle35() -> void:
     _place35(power_text,Vector2(357,557),Vector2(552,26))
     power_text.add_theme_font_size_override("font_size",16)
     power_text.add_theme_constant_override("outline_size",4)
-    _place35(notice_text,Vector2(341,596),Vector2(609,24))
+    _place35(notice_text,Vector2(341,586),Vector2(609,24))
     notice_text.add_theme_font_size_override("font_size",12)
     notice_text.add_theme_constant_override("outline_size",4)
     var command_shelf: Panel = _panel(self,"PremiumCommandShelf35",
@@ -251,6 +256,18 @@ func _refresh() -> void:
     var rival_ratio: float = clampf(game.enemy_hp/maxf(1.0,game.enemy_max_hp),0.0,1.0)
     hero_hp_bar.size.x = 315.0*hero_ratio
     enemy_hp_bar.size.x = 314.0*rival_ratio
+    # The inherited v0.33 health-loss trails assume older, wider HP bars.
+    # Clamp those trailing flashes to the actual v0.35 frames on every
+    # refresh, including when a new guardian first spawns at full HP.
+    hero_damage_tail33.size.x = clampf(
+        hero_damage_tail33.size.x,hero_hp_bar.size.x,315.0)
+    enemy_damage_tail33.size.x = clampf(
+        enemy_damage_tail33.size.x,enemy_hp_bar.size.x,314.0)
+    var foe_size: Vector2 = (
+        Vector2(496,373) if game.is_boss() else Vector2(454,344))
+    if enemy_art.size != foe_size:
+        enemy_art.size = foe_size
+        enemy_art.pivot_offset = foe_size*0.5
     hero_hp_text.text = "%s / %s" % [
         game.format_number(game.hero_hp),game.format_number(game.hero_max_hp)]
     enemy_hp_text.text = "%s / %s" % [
@@ -320,8 +337,10 @@ func _process(delta: float) -> void:
     hero_art.position = Vector2(63.0+player_lunge,250.0+sin(scene_clock31*1.75)*3.0)
     hero_art.rotation = -sin(scene_clock31*76.0)*stagger31*0.14
     enemy_art.position = Vector2(
-        752.0+sin(scene_clock31*91.0)*enemy_hit31*25.0,
-        242.0+sin(scene_clock31*1.53+0.5)*3.4)
+        (732.0 if game.is_boss() else 752.0)+
+            sin(scene_clock31*91.0)*enemy_hit31*25.0,
+        (225.0 if game.is_boss() else 242.0)+
+            sin(scene_clock31*1.53+0.5)*3.4)
     if stagger31 > 0.11:
         hero_art.modulate = Color("#ffe1d4")
     else:
