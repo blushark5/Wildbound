@@ -58,4 +58,6 @@ func _process(delta: float) -> void:
     # Previous layers compute lunge and stagger; offset their existing poses
     # after that computation, so we don't accumulate per-frame drift.
     hero_art.position += Vector2(-10.0,-17.0)
-    enemy_art.position += Vector2(-8.0,-12.0)
+    # Ground the opposing creature on its arena shadow; previous frames
+    # left the full-body painted fox and dragon hovering above the floor.
+    enemy_art.position += Vector2(-8.0,6.0)
