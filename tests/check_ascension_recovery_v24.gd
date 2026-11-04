@@ -33,6 +33,10 @@ func _check() -> void:
         _fail("Mobile Ascension text does not wrap or exceeds viewport");return
     if ui.counters_body == null or ui.chronicle_body == null or not ui.counters_body.scroll_active:
         _fail("Tactical matchup/Chronicle dialog body not scrollable");return
+    for kind in ["tempo","crit","recovery"]:
+        var detail: String = String(ui.upgrade_breakdown(kind)["details"])
+        if detail.length() < 75 or detail.find("%") < 0:
+            _fail("Upgrade description has malformed percent formatting: "+kind);return
     ui.guide_dialog.hide()
     ui._strike()
     if not ui.game.battle_started or not ui.playing:

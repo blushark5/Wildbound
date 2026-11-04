@@ -109,7 +109,7 @@ func upgrade_breakdown(kind: String) -> Dictionary:
             var next_pct: float = (1.0/pow(0.94,float(next))-1.0)*100.0
             line1 = "Each rank: attack interval -6%"
             line2 = "Attack rate +%.1f%%  →  +%.1f%%  •  Rank %d" % [now_pct,next_pct,rank]
-            details = "Each rank makes automatic attacks 6% faster by reducing the interval to 94% of its previous value. Effective attack-rate gain: +%.2f%% now, +%.2f%% with next rank." % [now_pct,next_pct]
+            details = "Each rank makes automatic attacks 6%% faster by reducing the interval to 94%% of its previous value. Effective attack-rate gain: +%.2f%% now, +%.2f%% with next rank." % [now_pct,next_pct]
         "guard":
             var old_hp: float = game.max_ward()
             var new_hp: float = old_hp*float(100+22*next)/float(100+22*rank)
@@ -121,7 +121,7 @@ func upgrade_breakdown(kind: String) -> Dictionary:
             var next_chance: float = minf(0.70,0.05+float(next)*0.035)
             line1 = "Each rank: +3.5 points crit (70% cap)"
             line2 = "%.1f%%  →  %.1f%% chance  •  Rank %d" % [current_chance*100.0,next_chance*100.0,rank]
-            details = "Critical hits deal 2.5x normal damage. Base chance is 5%; each rank adds 3.5 percentage points, capped at 70%. Current expected hit multiplier: %.3fx; next: %.3fx." % [1.0+current_chance*1.5,1.0+next_chance*1.5]
+            details = "Critical hits deal 2.5x normal damage. Base chance is 5%%; each rank adds 3.5 percentage points, capped at 70%%. Current expected hit multiplier: %.3fx; next: %.3fx." % [1.0+current_chance*1.5,1.0+next_chance*1.5]
         "bounty":
             var current_pct: float = (pow(1.15,float(rank))-1.0)*100.0
             var next_pct: float = (pow(1.15,float(next))-1.0)*100.0
@@ -134,7 +134,7 @@ func upgrade_breakdown(kind: String) -> Dictionary:
             var next_rate: float = 1.0+float(next)*0.7
             line1 = "Each rank: +0.7% max HP regenerated/sec"
             line2 = "%.1f%%/s  →  %.1f%%/s  •  Rank %d" % [current_rate,next_rate,rank]
-            details = "During combat, each 0.25s healing pulse restores 0.25% of the team's max HP multiplied by (1 + 0.7 × rank). This is approximately %.1f%% of maximum HP per second now, %.1f%% after the next rank, before stance effects." % [current_rate,next_rate]
+            details = "During combat, each 0.25s healing pulse restores 0.25%% of the team's max HP multiplied by (1 + 0.7 × rank). This is approximately %.1f%% of maximum HP per second now, %.1f%% after the next rank, before stance effects." % [current_rate,next_rate]
         "pierce":
             var current_pct: int = rank*20
             var next_pct: int = next*20

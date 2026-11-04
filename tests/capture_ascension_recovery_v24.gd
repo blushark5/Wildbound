@@ -22,6 +22,10 @@ func _capture() -> void:
     root.add_child(viewport)
     var ui: Control = SCENE.instantiate()
     viewport.add_child(ui)
+    # The onboarding dialog is shown by a deferred call on new saves.
+    # Give it a frame to open, then close it like a real player would,
+    # BEFORE simulating the first battle and an Ascension.
+    await _frames()
     ui.guide_dialog.hide()
     ui._strike()
     ui.game.best_wave = 21
