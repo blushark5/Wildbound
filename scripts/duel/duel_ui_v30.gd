@@ -14,7 +14,7 @@ const PEARL: Color = Color("#f7f4df")
 const SEA: Color = Color("#8ed2c4")
 const DARK: Color = Color("#0b2c3d")
 
-var game: RefCounted
+var game
 var ui_live: bool = false
 var refresh_timer: float = 0.0
 var bob_clock: float = 0.0
