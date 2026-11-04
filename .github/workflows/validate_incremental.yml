@@ -1,0 +1,53 @@
+name: Wildbound Duel Validation
+
+# One fast validation on each new source-branch commit.
+# Successful runs trigger the main-branch Pages publisher automatically.
+on:
+  push:
+    branches: [feature/wildbound-bond-sprite-v14]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wildbound-duel-source-validation
+  cancel-in-progress: true
+
+jobs:
+  verify-duel:
+    name: Verify current three-creature 1v1 game
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out current duel
+        uses: actions/checkout@v4
+
+      - name: Install Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import original game art and scripts
+        run: godot --headless --path . --editor --import --quit
+
+      - name: Verify core gameplay and latest visual interactions
+        run: |
+          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v33.tscn"' project.godot
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v32.gd
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v33.gd
+
+      - name: Verify game starts
+        run: timeout 60s godot --headless --path . --quit-after 20
+
+      - name: Export Web smoke test
+        run: |
+          mkdir -p "$RUNNER_TEMP/duel-test"
+          godot --headless --path . --export-release "Web" "$RUNNER_TEMP/duel-test/index.html"
+          test -s "$RUNNER_TEMP/duel-test/index.html"
+          test -s "$RUNNER_TEMP/duel-test/index.pck"
+          test -s "$RUNNER_TEMP/duel-test/index.wasm"
+          grep -aFq 'duel_ui_v33' "$RUNNER_TEMP/duel-test/index.pck"
