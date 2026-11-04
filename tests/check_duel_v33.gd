@@ -21,6 +21,8 @@ func _run() -> void:
         _fail("Current UI hierarchy failed to load");return
     if ui.game.SPECIES.size() != 3 or ui.roster_rows.size() != 3:
         _fail("Scope must remain three species");return
+    if not (ui.get_node("Tagline") as Label).text.contains("v0.33"):
+        _fail("Player-visible build version is stale");return
     if ui.auto_badge33 == null or ui.hero_damage_tail33 == null \
             or ui.enemy_damage_tail33 == null:
         _fail("Readability controls missing");return
