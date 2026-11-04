@@ -43,6 +43,8 @@ jobs:
         run: timeout 90s godot --headless --path . --script res://tests/check_readability_v21.gd
       - name: Validate v0.22 Ascension auto-form lifetime cap, exact bulk Gold, and tactical UI
         run: timeout 90s godot --headless --path . --script res://tests/check_tactical_ascension_v22.gd
+      - name: Validate v0.23 historical Replay, 3 presets, permanent Echo research and save switching
+        run: timeout 90s godot --headless --path . --script res://tests/check_replay_presets_v23.gd
       - name: Validate polished illustrated world and full-screen Field Guide
         run: timeout 60s godot --headless --path . --script res://tests/check_visual_v13.gd
       - name: Validate four-element collection, distinct owned individuals and earned hatches
@@ -127,6 +129,14 @@ jobs:
 
       - name: Print compact real-game art thumbnails for visual QA
         run: xvfb-run -a godot --path . --script res://tests/preview_visual_v13.gd
+
+      - name: Capture actual v0.23 Replay Route, Field Guide presets, Echo research and Chronicle
+        run: xvfb-run -a godot --path . --script res://tests/capture_replay_presets_v23.gd
+      - name: Archive v0.23 real gameplay UI screenshot review
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v23-replay-presets-chronicle
+          path: Docs/QA/wildbound_v23_*.png
 
       - name: Capture v0.22 mobile tactical battle, matchup, Ascension rewards and bulk buying
         run: xvfb-run -a godot --path . --script res://tests/capture_tactical_ascension_v22.gd
@@ -223,6 +233,8 @@ jobs:
           grep -aFq "bond_ui_v21.gd" /tmp/wildbound-idle-web/index.pck
           grep -aFq "bond_engine_v22.gd" /tmp/wildbound-idle-web/index.pck
           grep -aFq "bond_ui_v22.gd" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "bond_engine_v23.gd" /tmp/wildbound-idle-web/index.pck
+          grep -aFq "bond_ui_v23.gd" /tmp/wildbound-idle-web/index.pck
           grep -aFq "icon_fire.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "icon_water.svg" /tmp/wildbound-idle-web/index.pck
           grep -aFq "icon_earth.svg" /tmp/wildbound-idle-web/index.pck
