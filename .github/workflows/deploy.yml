@@ -50,11 +50,12 @@ jobs:
 
       - name: Verify current duel, save namespace and core gameplay
         run: |
-          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v33.tscn"' project.godot
+          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v34.tscn"' project.godot
           grep -Fq 'wildbound_duel_v30.json' scripts/duel/duel_engine_v30.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v32.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v33.gd
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v34.gd
 
       - name: Export current browser game ONCE
         run: |
@@ -63,7 +64,7 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-site/duel/index.html"
           test -s "$RUNNER_TEMP/wildbound-site/duel/index.wasm"
           test -s "$RUNNER_TEMP/wildbound-site/duel/index.pck"
-          grep -aFq 'duel_ui_v33' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
+          grep -aFq 'duel_ui_v34' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
           grep -aFq 'duel_engine_v30' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
           cp -a "$RUNNER_TEMP/wildbound-site/duel/." "$RUNNER_TEMP/wildbound-site/bond/"
 
@@ -83,14 +84,14 @@ jobs:
           html_file = duel / "index.html"
           html = html_file.read_text(encoding="utf-8")
           html, count = re.subn(r"<title>.*?</title>",
-              "<title>Wildbound: Creature Ascension v0.33</title>", html,
+              "<title>Wildbound: Creature Ascension v0.34</title>", html,
               count=1, flags=re.DOTALL | re.IGNORECASE)
           if count != 1:
               raise RuntimeError("No title in Godot Web export")
           html_file.write_text(html, encoding="utf-8")
           (bond / "index.html").write_text(html, encoding="utf-8")
-          info = ("Wildbound v0.33 | Three-creature 1v1\n"
-                  "Main scene: scenes/duel/wildbound_duel_v33.tscn\n"
+          info = ("Wildbound v0.34 | Three-creature 1v1\n"
+                  "Main scene: scenes/duel/wildbound_duel_v34.tscn\n"
                   "Commit: " + os.environ["SOURCE_SHA"] + "\n"
                   "Published: " + datetime.now(timezone.utc).isoformat() + "\n")
           for place in (duel, bond):
