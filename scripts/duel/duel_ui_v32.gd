@@ -38,6 +38,10 @@ func _ready() -> void:
     _build_battle_guidance32()
     _build_stage_ribbon32()
     _tune_game_buttons32()
+    # Player-facing build label. Leave Godot config/name unchanged so browser saves survive.
+    var version_tag: Label = get_node("Tagline") as Label
+    version_tag.text = "CREATURES  •  ELEMENTS  •  ASCENSION     v0.32"
+    version_tag.add_theme_color_override("font_color",Color("#bfe8cf"))
     game.strike_landed.connect(_on_strike32)
     game.duel_finished.connect(_on_finished32)
     polish32_ready = true
