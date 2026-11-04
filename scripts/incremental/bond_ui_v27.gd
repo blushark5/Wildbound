@@ -4,7 +4,7 @@ extends "res://scripts/incremental/bond_ui_v26.gd"
 ## Inherits v0.26 combat/Ascension recovery, no engine/economy changes.
 
 const MENU_KEYS: Array[String] = ["TEAM","GROW","NEST","LEGACY","WORLD","TOOLS","SAVE"]
-const MENU_LABELS: Array[String] = ["TEAM","GOLD","NEST","ASCEND","WORLD","TOOLS","SAVE"]
+const MENU_LABELS: Array[String] = ["TEAM","GOLD","NEST","ASC","WORLD","TOOLS","SAVE"]
 const MENU_ELEMENT_ORDER: Array[String] = ["Fire","Water","Earth","Air"]
 var nav27_ready: bool = false
 var menu_section: String = "TEAM"
@@ -53,7 +53,11 @@ func _create_unified_nav() -> void:
         var button: Button = _button("SideTab_"+key,MENU_LABELS[i],
             Rect2(852+i*56.0,99,54,37),_show_section.bind(key),MINT_TONE)
         button.z_index = 6
-        button.add_theme_font_size_override("font_size",10)
+        button.add_theme_font_size_override("font_size",9)
+        var narrow_style := _glass(Color("#143342"),MINT_TONE,6,1)
+        narrow_style.content_margin_left = 3.0
+        narrow_style.content_margin_right = 3.0
+        button.add_theme_stylebox_override("normal",narrow_style)
         button.tooltip_text = {
             "TEAM":"Field Guide: view, hatch, equip and save teams",
             "GROW":"Gold upgrades for your current run",
