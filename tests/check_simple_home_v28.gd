@@ -72,7 +72,8 @@ func _test() -> void:
     var speed: float = ui.game.game_speed
     ui._toggle_play_speed()
     if ui.game.game_speed == speed:
-        _fail("Speed control no longer modifies gameplay");return
+        _fail("Speed control no longer modifies gameplay: before=%s after=%s started=%s" % [
+            str(speed),str(ui.game.game_speed),str(ui.game.battle_started)]);return
     ui._close_skills_panel()
     ui._close_drawer()
     if not _check_main(ui):
