@@ -325,35 +325,42 @@ jobs:
           grep -aFq "nest_egg.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
           printf 'Wildbound Visual World v0.13\nSource: %s\n' "$(git -C world-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/world/build-info.txt"
 
-      # Standalone earned Bond Rank and animated sprites v0.14.
-      # Always retain /world/, /collection/, /squads/ and old saves.
-      - name: Checkout verified Bond Mastery v0.14 branch
+      # The active Wildbound game is now the genuine 3-creature, 1v1 v0.30
+      # release. Keep the legacy directories separate; never ship an old
+      # 3v3 main scene at the primary /bond/ URL.
+      - name: Checkout validated Wildbound 1v1 release
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-bond-sprite-v14' && github.event.workflow_run.head_sha || 'feature/wildbound-bond-sprite-v14' }}
           path: bond-preview
 
-      - name: Isolate v0.14 progression from prior browser saves
+      - name: Assert the intended 3-creature main scene is selected
         run: |
-          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_bond_v14_preview_v1.json/g' bond-preview/scripts/incremental/engine.gd
+          test -s bond-preview/scenes/duel/wildbound_duel_v30.tscn
+          test -s bond-preview/scripts/duel/duel_ui_v30.gd
+          test -s bond-preview/scripts/duel/duel_engine_v30.gd
+          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v30.tscn"' bond-preview/project.godot
+          grep -Fq 'config/name="Wildbound: Creature Ascension v0.30"' bond-preview/project.godot
+          echo "Validated 1v1 source: $(git -C bond-preview rev-parse HEAD)"
 
-      - name: Verify actual prestige Bond mastery and sprite input
+      - name: Import the 1v1 creature game and verify runtime
         run: |
           godot --headless --path bond-preview --editor --import --quit
-          timeout 60s godot --headless --path bond-preview --script res://tests/check_bond_v14.gd
+          timeout 90s godot --headless --path bond-preview --script res://tests/check_duel_v30.gd
 
-      - name: Export Bond Mastery v0.14 browser game to /bond/
+      - name: Export verified v0.30 to both /bond/ and fresh /duel/
         run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/bond"
-          godot --headless --path bond-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/bond/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/bond/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/bond/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/bond/index.wasm"
-          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/bond/index.pck"
-          grep -aFq "pebblit_attack.svg" "$RUNNER_TEMP/wildbound-site/bond/index.pck"
-          grep -aFq "skyray_evolved_idle.svg" "$RUNNER_TEMP/wildbound-site/bond/index.pck"
-          grep -aFq "fx_fire.svg" "$RUNNER_TEMP/wildbound-site/bond/index.pck"
-          printf 'Wildbound Bond Mastery v0.14\nSource: %s\n' "$(git -C bond-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/bond/build-info.txt"
+          mkdir -p "$RUNNER_TEMP/wildbound-site/bond" "$RUNNER_TEMP/wildbound-site/duel"
+          godot --headless --path bond-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/duel/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/duel/index.html"
+          test -s "$RUNNER_TEMP/wildbound-site/duel/index.pck"
+          test -s "$RUNNER_TEMP/wildbound-site/duel/index.wasm"
+          grep -aFq 'duel_engine_v30' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
+          grep -aFq 'wildbound_duel_v30' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
+          printf 'Wildbound 1v1 v0.30\nMain scene: scenes/duel/wildbound_duel_v30.tscn\nSource: %s\n' "$(git -C bond-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/duel/build-info.txt"
+          cp -a "$RUNNER_TEMP/wildbound-site/duel/." "$RUNNER_TEMP/wildbound-site/bond/"
+          cmp "$RUNNER_TEMP/wildbound-site/duel/index.pck" "$RUNNER_TEMP/wildbound-site/bond/index.pck"
+          echo "Published the real v0.30 duel to BOTH /bond/ and /duel/."
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
