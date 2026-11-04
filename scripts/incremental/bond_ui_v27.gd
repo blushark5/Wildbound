@@ -642,7 +642,13 @@ func _show_first_steps() -> void:
         call_deferred("_show_slot_guide_if_needed")
         return
     guide_dialog.hide()
-    _show_section("TEAM")
+    # Several inherited onboarding controllers schedule deferred welcome
+    # callbacks during initialization. Never let a late welcome steal the
+    # player's current menu selection or interrupt a started battle.
+    if game.battle_started or (drawer_open and menu_section != "TEAM"):
+        return
+    if not drawer_open:
+        _show_section("TEAM")
     _toast("Choose TEAM, GOLD, NEST or TOOLS at the top. START FIRST BATTLE when ready.")
 
 func _refresh() -> void:
