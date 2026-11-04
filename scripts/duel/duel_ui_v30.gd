@@ -3,9 +3,12 @@ extends Control
 ## Only original painted Cindlet / Brinlet / Spriglet art is used.
 const DUEL = preload("res://scripts/duel/duel_engine_v30.gd")
 const SPRITES = preload("res://scripts/incremental/sprite_frames_v14.gd")
-const LANDSCAPE = preload("res://assets/incremental/v29/valley_arena.svg")
+const LANDSCAPE = preload("res://assets/duel/duel_valley_v30.svg")
 const COIN = preload("res://assets/incremental/v13/gold.svg")
 const ECHO = preload("res://assets/incremental/v13/echo.svg")
+const FIRE_MARK = preload("res://assets/incremental/v20/icon_fire.svg")
+const WATER_MARK = preload("res://assets/incremental/v20/icon_water.svg")
+const EARTH_MARK = preload("res://assets/incremental/v20/icon_earth.svg")
 const COLORS: Dictionary = {
     "Fire":Color("#ffac72"),"Water":Color("#79d6f2"),"Earth":Color("#a9df96")
 }
@@ -196,6 +199,9 @@ func _build_screen() -> void:
             Color("#1b5261"),COLORS[DUEL.SPECIES[kind]["element"]],12)
         var photo: TextureRect = _art(self,"RosterArt_"+kind,
             SPRITES.creature(kind,false),Rect2(45,y+11,91,90))
+        var elemental: Texture2D = (FIRE_MARK if kind == "cindlet"
+            else WATER_MARK if kind == "brinlet" else EARTH_MARK)
+        _art(self,"ElementIcon_"+kind,elemental,Rect2(347,y+13,23,23))
         var name: Label = _text(self,"RosterName_"+kind,"",
             Rect2(146,y+11,224,29),18,PEARL)
         var info: Label = _text(self,"RosterInfo_"+kind,"",
@@ -230,12 +236,12 @@ func _build_screen() -> void:
     _panel(self,"HeroAura",Rect2(474,302,162,147),
         Color("#0c3041",0.17),Color("#79bdc1",0.26),78)
     hero_art = _art(self,"YourCreature",SPRITES.creature("spriglet",false),
-        Rect2(468,283,173,173))
+        Rect2(480,305,147,148))
     hero_art.pivot_offset = hero_art.size*0.5
     _panel(self,"RivalAura",Rect2(724,196,345,266),
         Color("#184b4a",0.16),Color("#b5d3c2",0.24),120)
     enemy_art = _art(self,"EnemyCreature",SPRITES.creature("cindlet",false),
-        Rect2(723,182,348,289))
+        Rect2(755,192,285,269))
     enemy_art.pivot_offset = enemy_art.size*0.5
 
     enemy_hit_button = Button.new()
@@ -293,9 +299,17 @@ func _build_screen() -> void:
     next_button = _button(self,"MainBattleAction","▶  START BATTLE",
         Rect2(432,632,515,59),_primary_action,true)
     next_button.add_theme_font_size_override("font_size",24)
+    next_button.add_theme_stylebox_override("normal",
+        _style(Color("#9d402b"),Color("#ffe1a3"),13,3,7))
+    next_button.add_theme_stylebox_override("hover",
+        _style(Color("#c05232"),Color("#fff0ba"),13,3,8))
+    next_button.add_theme_stylebox_override("pressed",
+        _style(Color("#7d3329"),Color("#f4bb6a"),13,3,3))
     farm_button = _button(self,"FarmGold","FARM GOLD",
         Rect2(960,632,273,59),_farm)
     farm_button.add_theme_font_size_override("font_size",18)
+    farm_button.add_theme_stylebox_override("normal",_style(Color("#795a23"),GOLD,12,2,5))
+    farm_button.add_theme_stylebox_override("hover",_style(Color("#a17930"),GOLD,12,2,6))
     farm_button.tooltip_text = "Replay a cleared stage for Gold and Bond XP."
     _text(self,"FooterHelp","Click the enemy to help attack • creatures fight automatically",
         Rect2(445,610,740,20),11,SEA,HORIZONTAL_ALIGNMENT_CENTER)
@@ -580,8 +594,8 @@ func _process(delta: float) -> void:
         return
     game.tick(delta)
     bob_clock += delta
-    hero_art.position.y = 283.0+sin(bob_clock*2.0)*3.0
-    enemy_art.position.y = 182.0+sin(bob_clock*1.6+0.7)*4.0
+    hero_art.position.y = 305.0+sin(bob_clock*2.0)*3.0
+    enemy_art.position.y = 192.0+sin(bob_clock*1.6+0.7)*4.0
     refresh_timer += delta
     if refresh_timer >= 0.08:
         refresh_timer = 0.0
