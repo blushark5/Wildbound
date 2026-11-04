@@ -359,6 +359,19 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-site/duel/index.html"
           test -s "$RUNNER_TEMP/wildbound-site/duel/index.pck"
           test -s "$RUNNER_TEMP/wildbound-site/duel/index.wasm"
+          # Change only the exported HTML tab title. Internal project name stays
+          # constant because changing it risks resetting Godot Web save storage.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          output = Path(__import__('os').environ['RUNNER_TEMP']) / 'wildbound-site/duel/index.html'
+          html = output.read_text(encoding='utf-8')
+          patched, count = re.subn(r'(<title>)[\\s\\S]*?(</title>)', r'\\1Wildbound: Creature Ascension v0.32\\2', html, count=1, flags=re.IGNORECASE)
+          if count != 1:
+              raise RuntimeError('Godot HTML title was missing; not publishing a mislabeled build')
+          output.write_text(patched, encoding='utf-8')
+          assert '<title>Wildbound: Creature Ascension v0.32</title>' in patched
+          PY
           grep -aFq 'duel_engine_v30' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
           grep -aFq 'wildbound_duel_v32' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
           grep -aFq 'duel_ui_v32' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
