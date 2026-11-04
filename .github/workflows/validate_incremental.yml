@@ -32,6 +32,15 @@ jobs:
         run: godot --headless --path . --editor --import --quit
       - name: Test actual 1v1 elemental combat, training, farming, bosses and Ascension
         run: timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
+      - name: Validate v0.31 combat visual events, three-creature scope and real interface
+        run: timeout 90s godot --headless --path . --script res://tests/check_duel_v31.gd
+      - name: Capture four polished v0.31 screenshots with live battle and victories
+        run: xvfb-run -a godot --path . --script res://tests/capture_duel_v31.gd
+      - name: Archive polished v0.31 visuals for visual inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildbound-v31-art-review
+          path: Docs/QA/wildbound_v31_*.png
       - name: Start the new game scene and catch initialization failures
         run: timeout 60s godot --headless --path . --quit-after 30
       - name: Capture five full-size Godot UI screenshots
@@ -49,6 +58,7 @@ jobs:
           test -s "$RUNNER_TEMP/wildbound-v30/index.wasm"
           test -s "$RUNNER_TEMP/wildbound-v30/index.pck"
           grep -aFq 'duel_engine_v30' "$RUNNER_TEMP/wildbound-v30/index.pck"
+          grep -aFq 'duel_ui_v31' "$RUNNER_TEMP/wildbound-v30/index.pck"
       - name: Archive actual web build
         uses: actions/upload-artifact@v4
         with:
