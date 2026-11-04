@@ -351,6 +351,10 @@ func _set_drawer_visibility(show: bool) -> void:
     var landing: bool = show and home28_open
     home28.visible = landing
     back28_button.visible = show and not landing
+    # Keep the return-to-menu button distinct from the section heading.
+    # In v0.27 both were anchored at x862 and overlapped on phone screens.
+    menu_heading.position = Vector2(862,151) if landing else Vector2(957,151)
+    menu_heading.size.x = 239 if landing else 236
     if landing:
         for button in menu_buttons.values():
             (button as Button).hide()
