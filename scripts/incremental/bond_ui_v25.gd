@@ -324,9 +324,25 @@ func _refresh_codex() -> void:
                 "Your other squad slots stay unchanged."])
 
 func _replace_active_game() -> void:
-    super._replace_active_game()
-    # Preserve v0.24's fixed Ascension restart and all newer save-slot
-    # semantics while restoring the v0.25 preferences after a slot switch.
+    # Never call an older parent slot-replacement method. v0.19–v0.24
+    # created their historical engine, then invoked virtual _refresh() and
+    # _switch_tab() on a subclass expecting the newer engine. Besides
+    # breaking v0.25 layout preferences, this queued stale welcome dialogs.
+    playing = false
+    if is_instance_valid(codex_layer):
+        codex_layer.hide()
+    if is_instance_valid(chronicle_dialog):
+        chronicle_dialog.hide()
+    if is_instance_valid(ascent_results):
+        ascent_results.hide()
+    if is_instance_valid(matchup_dialog):
+        matchup_dialog.hide()
+    prev_playing = false
+    ui_clock = 0.0
+    autosave_clock = 0.0
+    modal_was_active = false
+    extra_modal_paused = false
+    pending_ascension_start = false
     game = ENGINE_25.new()
     game.initialize_alpha()
     game.load_save()
@@ -334,8 +350,17 @@ func _replace_active_game() -> void:
     last_kills = game.kills
     last_guardian = game.last_boss_wave
     playing = game.battle_started
+    if not game.battle_started:
+        game.onboarding_seen = true
+        call_deferred("_show_slot_guide_if_needed")
     if qol25_ready:
         _apply_journey_layout()
         _apply_type_sizes()
         _switch_tab("GROW")
         _refresh()
+
+func _show_slot_guide_if_needed() -> void:
+    # A user may open Slot 2 and immediately return to Slot 1. Deferred
+    # onboarding from Slot 2 must not interrupt a running Slot 1 game.
+    if game != null and not game.battle_started:
+        _show_first_steps()
