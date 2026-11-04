@@ -25,11 +25,11 @@ func _check_layout(ui: Control,compact: bool) -> bool:
     var tabs_y: float = 225.0 if compact else 308.0
     var scroll_y: float = 303.0 if compact else 386.0
     var shop_y: float = 213.0 if compact else 296.0
-    if not _near(shop.position.y,shop_y) or not _near(scroll.position.y,scroll_y):
+    if not _near(panel.position.y,shop_y) or not _near(scroll.position.y,scroll_y):
         _fail("Sidebar did not reposition correctly when Journey toggled");return false
     if not _near(journey.size.y,115.0 if compact else 198.0):
         _fail("Journey height incorrect");return false
-    if shop.position.y < journey.position.y+journey.size.y:
+    if panel.position.y < journey.position.y+journey.size.y:
         _fail("Shop overlaps the Journey panel");return false
     for tab in ui.tab_buttons.values():
         if not _near(tab.position.y,tabs_y) or tab.size.y < 39:
