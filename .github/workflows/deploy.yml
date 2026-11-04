@@ -1,395 +1,118 @@
-name: Build and publish Wildbound Web
+name: Wildbound — Test and Publish
 
+# Single production pipeline for the current three-creature 1v1 game.
+# Historical preview builds remain in source control, but are no longer rebuilt.
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - feature/wildbound-bond-sprite-v14
   workflow_dispatch:
-  # Every validated incremental feature update refreshes the browser game.
-  workflow_run:
-    workflows: ["Wildbound creature incremental reboot"]
-    types: [completed]
-    branches: [feature/wildbound-creature-incremental-reboot, feature/wildbound-art-and-ui-v06, feature/wildbound-true-visual-rebuild-v07, feature/wildbound-battle-experience-v08, feature/wildbound-journey-rebuild-v09, feature/wildbound-challenge-loop-v10, feature/wildbound-live-squads-v11, feature/wildbound-unique-collection-v12, feature/wildbound-visual-world-v13, feature/wildbound-bond-sprite-v14]
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Cancel superseded successful publications, but do not let a cancelled
-# validation run cancel a genuine Pages upload that is already underway.
+# Each new iteration supersedes the previous production build.
 concurrency:
-  group: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' && 'github-pages-noop-v32' || 'github-pages-publish-v32' }}
+  group: wildbound-production-web
   cancel-in-progress: true
 
 jobs:
-  web:
-    # Only publish feature-branch changes after its full test workflow passes.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
-    name: Build Web and deploy Pages
+  test-export-publish:
+    name: Validate, Export and Publish Wildbound
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-      - name: Checkout stable main branch
+      - name: Check out active Wildbound game
         uses: actions/checkout@v4
         with:
-          ref: main
-          fetch-depth: 0
+          # Pin the triggering commit; manual runs use the latest active branch.
+          ref: ${{ github.ref_name == 'feature/wildbound-bond-sprite-v14' && github.sha || 'feature/wildbound-bond-sprite-v14' }}
 
-      - name: Install Godot 4.7.2 with export templates
+      - name: Install Godot Web export templates
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.7.2
           use-dotnet: false
           include-templates: true
 
-      - name: Import assets and validate stable project
+      - name: Import assets and scripts
         run: godot --headless --path . --editor --import --quit
 
-      - name: Export stable web game
+      - name: Verify three-creature 1v1 combat and visual polish
         run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site"
-          godot --headless --path . --export-release "Web" "$RUNNER_TEMP/wildbound-site/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/index.wasm"
-          test -s "$RUNNER_TEMP/wildbound-site/index.pck"
-          touch "$RUNNER_TEMP/wildbound-site/.nojekyll"
+          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v32.tscn"' project.godot
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v32.gd
 
-      - name: Check whether develop branch exists
-        id: dev_branch
+      - name: Export one current browser build
         run: |
-          if git ls-remote --exit-code --heads origin develop >/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Checkout development build
-        if: steps.dev_branch.outputs.exists == 'true'
-        uses: actions/checkout@v4
-        with:
-          ref: develop
-          path: experimental
-
-      - name: Keep preview saves separate from stable
-        if: steps.dev_branch.outputs.exists == 'true'
-        run: |
-          sed -i 's/wildbound_first_steps_v0_1.json/wildbound_first_steps_preview_v0_1.json/g' experimental/scripts/main.gd
-
-      - name: Import development assets
-        if: steps.dev_branch.outputs.exists == 'true'
-        run: godot --headless --path experimental --editor --import --quit
-
-      - name: Export preview to /dev/
-        if: steps.dev_branch.outputs.exists == 'true'
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/dev"
-          godot --headless --path experimental --export-release "Web" "$RUNNER_TEMP/wildbound-site/dev/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/dev/index.html"
-
-      # A verified feature commit automatically advances /reboot/. On a
-      # workflow_run, pin the exact SHA which passed feature CI.
-      - name: Checkout Creature Ascension reboot
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-creature-incremental-reboot' && github.event.workflow_run.head_sha || 'feature/wildbound-creature-incremental-reboot' }}
-          path: creature-reboot
-
-      - name: Import reboot assets and validate Godot scripts
-        run: godot --headless --path creature-reboot --editor --import --quit
-
-      - name: Validate reboot combat, evolution, Ascension, and saves
-        run: godot --headless --path creature-reboot --script res://tests/check_incremental.gd
-
-      - name: Validate extended Creature Ascension Alpha and save compatibility
-        run: godot --headless --path creature-reboot --script res://tests/check_alpha.gd
-
-      - name: Validate v0.3 tactics, Resonance, camp and legacy-save upgrades
-        run: godot --headless --path creature-reboot --script res://tests/check_v03.gd
-
-      - name: Validate v0.4 masteries, combo, caches and save migration
-        run: godot --headless --path creature-reboot --script res://tests/check_v04.gd
-
-      - name: Check v0.5 real sprites, painted UI and gameplay input
-        run: godot --headless --path creature-reboot --script res://tests/check_visual_v05.gd
-
-      - name: Export creature reboot to /reboot/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/reboot"
-          godot --headless --path creature-reboot --export-release "Web" "$RUNNER_TEMP/wildbound-site/reboot/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/reboot/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/reboot/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/reboot/index.wasm"
-          printf 'Wildbound Creature Ascension\nSource: %s\n' "$(git -C creature-reboot rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/reboot/build-info.txt"
-
-      # Isolated visual sandbox has the same tested art plus a separate
-      # project name and save path. Mobile players can test either URL.
-      - name: Checkout visual review build
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-true-visual-rebuild-v07' && github.event.workflow_run.head_sha || 'feature/wildbound-true-visual-rebuild-v07' }}
-          path: visual-review
-
-      - name: Separate visual-review browser saves
-        run: |
-          sed -i 's/Wildbound: Creature Ascension (Prototype)/Wildbound: Visual Review (Sandbox)/g' visual-review/project.godot
-          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_visual_review_v1.json/g' visual-review/scripts/incremental/engine.gd
-
-      - name: Import visual review art and validate scripts
-        run: godot --headless --path visual-review --editor --import --quit
-
-      - name: Check illustrated UI, evolved poses, region scenes and live buttons
-        run: godot --headless --path visual-review --script res://tests/check_visual_v05.gd
-
-      - name: Validate new v0.6 monster portraits, illustrated meadow and live combat
-        run: godot --headless --path visual-review --script res://tests/check_visual_v06.gd
-
-      - name: Verify v0.7 six creature stages, battle input and HUD layout
-        run: godot --headless --path visual-review --script res://tests/check_visual_v07.gd
-
-      - name: Export visual study separately to /visual/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/visual"
-          godot --headless --path visual-review --export-release "Web" "$RUNNER_TEMP/wildbound-site/visual/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/visual/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/visual/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/visual/index.wasm"
-          printf 'Wildbound Visual Sandbox\nSource: %s\n' "$(git -C visual-review rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/visual/build-info.txt"
-
-      # The v0.8 candidate is published side by side. Never overwrite the
-      # approved /visual/ art review, /reboot/ gameplay or root RPG.
-      - name: Checkout v0.8 battle experience candidate
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-battle-experience-v08' && github.event.workflow_run.head_sha || 'feature/wildbound-battle-experience-v08' }}
-          path: battle-next
-
-      - name: Give v0.8 an independent browser save namespace
-        run: |
-          sed -i 's/Wildbound: Creature Ascension (Prototype)/Wildbound: Battle v0.8 (Preview)/g' battle-next/project.godot
-          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_battle_v08_preview_v1.json/g' battle-next/scripts/incremental/engine.gd
-
-      - name: Import candidate assets and validate stage scripts
-        run: godot --headless --path battle-next --editor --import --quit
-
-      - name: Test v0.8 creature formation and boss combat before hosting
-        run: godot --headless --path battle-next --script res://tests/check_visual_v08.gd
-
-      - name: Publish browser-playable v0.8 only to /next/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/next"
-          godot --headless --path battle-next --export-release "Web" "$RUNNER_TEMP/wildbound-site/next/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/next/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/next/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/next/index.wasm"
-          printf 'Wildbound Battle v0.8 Candidate\nSource: %s\n' "$(git -C battle-next rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/next/build-info.txt"
-
-      # v0.9 is the independently tested journey-first candidate. Its save
-      # namespace is deliberately separate from every previous browser game.
-      - name: Checkout verified v0.9 journey candidate
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-journey-rebuild-v09' && github.event.workflow_run.head_sha || 'feature/wildbound-journey-rebuild-v09' }}
-          path: journey-preview
-
-      - name: Isolate journey sandbox saves
-        run: |
-          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_journey_v09_preview_v1.json/g' journey-preview/scripts/incremental/engine.gd
-
-      - name: Import and test real v0.9 journey progression
-        run: |
-          godot --headless --path journey-preview --editor --import --quit
-          godot --headless --path journey-preview --script res://tests/check_journey_v09.gd
-
-      - name: Export journey-first browser version only to /journey/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/journey"
-          godot --headless --path journey-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/journey/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/journey/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/journey/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/journey/index.wasm"
-          printf 'Wildbound Journey v0.9 Candidate\nSource: %s\n' "$(git -C journey-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/journey/build-info.txt"
-
-      # Stage the tested v0.10 user-controlled progression candidate separately.
-      # No previously approved page or browser save is replaced.
-      - name: Checkout validated v0.10 challenge loop
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-challenge-loop-v10' && github.event.workflow_run.head_sha || 'feature/wildbound-challenge-loop-v10' }}
-          path: challenge-preview
-
-      - name: Isolate v0.10 browser save namespace
-        run: |
-          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_challenge_v10_preview_v1.json/g' challenge-preview/scripts/incremental/engine.gd
-
-      - name: Import and test actual v0.10 player choices
-        run: |
-          godot --headless --path challenge-preview --editor --import --quit
-          godot --headless --path challenge-preview --script res://tests/check_challenge_v10.gd
-
-      - name: Export working v0.10 browser game only to /challenge/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/challenge"
-          godot --headless --path challenge-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/challenge/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/challenge/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/challenge/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/challenge/index.wasm"
-          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/challenge/index.pck"
-          grep -aFq "v07_evolved_bestiary.webp.base64" "$RUNNER_TEMP/wildbound-site/challenge/index.pck"
-          printf 'Wildbound Challenge v0.10\nSource: %s\n' "$(git -C challenge-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/challenge/build-info.txt"
-
-      # Independent v0.11 trainer combat test: never overwrite prior branches or saves.
-      - name: Checkout tested v0.11 live three-on-three squad build
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-live-squads-v11' && github.event.workflow_run.head_sha || 'feature/wildbound-live-squads-v11' }}
-          path: squads-preview
-
-      - name: Keep trainer squad saves independent from every older build
-        run: |
-          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_squads_v11_preview_v1.json/g' squads-preview/scripts/incremental/engine.gd
-
-      - name: Validate actual v0.11 live battle and team-selection logic
-        run: |
-          godot --headless --path squads-preview --editor --import --quit
-          godot --headless --path squads-preview --script res://tests/check_squads_v11.gd
-
-      - name: Export independent v0.11 browser game to /squads/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/squads"
-          godot --headless --path squads-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/squads/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/squads/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/squads/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/squads/index.wasm"
-          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/squads/index.pck"
-          grep -aFq "v07_evolved_bestiary.webp.base64" "$RUNNER_TEMP/wildbound-site/squads/index.pck"
-          printf 'Wildbound Live Squads v0.11\nSource: %s\n' "$(git -C squads-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/squads/build-info.txt"
-
-      # Unique earned collection v0.12, deliberately isolated from v0.11 saves.
-      - name: Checkout validated v0.12 unique collection
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-unique-collection-v12' && github.event.workflow_run.head_sha || 'feature/wildbound-unique-collection-v12' }}
-          path: collection-preview
-
-      - name: Keep collectible creatures and saves independent
-        run: |
-          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_unique_collection_v12_preview_v1.json/g' collection-preview/scripts/incremental/engine.gd
-
-      - name: Import and validate actual earned-only collection and four elements
-        run: |
-          godot --headless --path collection-preview --editor --import --quit
-          godot --headless --path collection-preview --script res://tests/check_collection_v12.gd
-
-      - name: Publish separate browser game to /collection/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/collection"
-          godot --headless --path collection-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/collection/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/collection/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/collection/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/collection/index.wasm"
-          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/collection/index.pck"
-          grep -aFq "zephlet.svg" "$RUNNER_TEMP/wildbound-site/collection/index.pck"
-          grep -aFq "skyray.svg" "$RUNNER_TEMP/wildbound-site/collection/index.pck"
-          printf 'Wildbound Unique Collection v0.12\nSource: %s\n' "$(git -C collection-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/collection/build-info.txt"
-
-      # Original illustrated world v0.13; keep earlier builds and saves untouched.
-      - name: Checkout tested v0.13 illustrated Field Guide
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-visual-world-v13' && github.event.workflow_run.head_sha || 'feature/wildbound-visual-world-v13' }}
-          path: world-preview
-
-      - name: Give v0.13 its own independent browser save
-        run: |
-          sed -i 's/wildbound_incremental_reboot_v1.json/wildbound_visual_world_v13_preview_v1.json/g' world-preview/scripts/incremental/engine.gd
-
-      - name: Validate actual Field Guide, Gold/Essence separation and squad controls
-        run: |
-          godot --headless --path world-preview --editor --import --quit
-          godot --headless --path world-preview --script res://tests/check_visual_v13.gd
-          godot --headless --path world-preview --script res://tests/check_collection_v12.gd
-
-      - name: Export standalone illustrated v0.13 game to /world/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/world"
-          godot --headless --path world-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/world/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/world/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/world/index.pck"
-          test -s "$RUNNER_TEMP/wildbound-site/world/index.wasm"
-          grep -aFq "v07_bestiary_atlas.webp.base64" "$RUNNER_TEMP/wildbound-site/world/index.pck"
-          grep -aFq "zephlet.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
-          grep -aFq "arena_earth.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
-          grep -aFq "arena_air.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
-          grep -aFq "nest_egg.svg" "$RUNNER_TEMP/wildbound-site/world/index.pck"
-          printf 'Wildbound Visual World v0.13\nSource: %s\n' "$(git -C world-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/world/build-info.txt"
-
-      # The active Wildbound game is now the genuine 3-creature, 1v1 v0.32
-      # release. Keep the legacy directories separate; never ship an old
-      # 3v3 main scene at the primary /bond/ URL.
-      - name: Checkout validated Wildbound 1v1 release
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'feature/wildbound-bond-sprite-v14' && github.event.workflow_run.head_sha || 'feature/wildbound-bond-sprite-v14' }}
-          path: bond-preview
-
-      - name: Assert the intended v0.32 polished 3-creature scene is selected
-        run: |
-          test -s bond-preview/scenes/duel/wildbound_duel_v32.tscn
-          test -s bond-preview/scripts/duel/duel_ui_v32.gd
-          test -s bond-preview/scripts/duel/duel_ambient_v32.gd
-          test -s bond-preview/scripts/duel/duel_vfx_v32.gd
-          test -s bond-preview/scripts/duel/duel_engine_v30.gd
-          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v32.tscn"' bond-preview/project.godot
-          grep -Fq 'config/name="Wildbound: Creature Ascension v0.30"' bond-preview/project.godot
-          echo "Validated 1v1 source: $(git -C bond-preview rev-parse HEAD)"
-
-      - name: Import the 1v1 creature game and verify runtime
-        run: |
-          godot --headless --path bond-preview --editor --import --quit
-          timeout 90s godot --headless --path bond-preview --script res://tests/check_duel_v30.gd
-          timeout 90s godot --headless --path bond-preview --script res://tests/check_duel_v31.gd
-          timeout 90s godot --headless --path bond-preview --script res://tests/check_duel_v32.gd
-
-      - name: Export verified v0.32 to both /bond/ and /duel/
-        run: |
-          mkdir -p "$RUNNER_TEMP/wildbound-site/bond" "$RUNNER_TEMP/wildbound-site/duel"
-          godot --headless --path bond-preview --export-release "Web" "$RUNNER_TEMP/wildbound-site/duel/index.html"
+          mkdir -p "$RUNNER_TEMP/wildbound-site/duel" "$RUNNER_TEMP/wildbound-site/bond"
+          godot --headless --path . --export-release "Web" "$RUNNER_TEMP/wildbound-site/duel/index.html"
           test -s "$RUNNER_TEMP/wildbound-site/duel/index.html"
-          test -s "$RUNNER_TEMP/wildbound-site/duel/index.pck"
           test -s "$RUNNER_TEMP/wildbound-site/duel/index.wasm"
-          # Change only the exported HTML tab title. Internal project name stays
-          # constant because changing it risks resetting Godot Web save storage.
+          test -s "$RUNNER_TEMP/wildbound-site/duel/index.pck"
+          grep -aFq 'duel_ui_v32' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
+          grep -aFq 'duel_engine_v30' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
+          cp -a "$RUNNER_TEMP/wildbound-site/duel/." "$RUNNER_TEMP/wildbound-site/bond/"
+          cmp "$RUNNER_TEMP/wildbound-site/duel/index.pck" "$RUNNER_TEMP/wildbound-site/bond/index.pck"
+
+      - name: Add accurate build labels without changing Godot save identity
+        env:
+          SITE_ROOT: ${{ runner.temp }}/wildbound-site
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
           python3 - <<'PY'
           from pathlib import Path
           import os
-          output = Path(os.environ['RUNNER_TEMP']) / 'wildbound-site/duel/index.html'
-          html = output.read_text(encoding='utf-8')
-          opening = html.find('<title>')
-          closing = html.find('</title>', opening)
+          from datetime import datetime, timezone
+
+          root = Path(os.environ['SITE_ROOT'])
+          game = root / 'duel'
+          html_path = game / 'index.html'
+          html = html_path.read_text(encoding='utf-8')
+          opening = html.lower().find('<title>')
+          closing = html.lower().find('</title>', opening)
           if opening < 0 or closing < 0:
-              raise RuntimeError('Godot HTML title missing; refusing stale version label')
-          patched = html[:opening] + '<title>Wildbound: Creature Ascension v0.32</title>' + html[closing + len('</title>'):]
-          output.write_text(patched, encoding='utf-8')
-          assert '<title>Wildbound: Creature Ascension v0.32</title>' in patched
+              raise RuntimeError('Expected Godot HTML title missing')
+          html_path.write_text(
+              html[:opening] + '<title>Wildbound: Creature Ascension v0.32</title>'
+              + html[closing + len('</title>'):],
+              encoding='utf-8'
+          )
+          for destination in (game, root / 'bond'):
+              if destination != game:
+                  (destination / 'index.html').write_text(html_path.read_text(encoding='utf-8'), encoding='utf-8')
+              (destination / 'build-info.txt').write_text(
+                  'Wildbound v0.32 | Three-creature 1v1\n'
+                  + 'Main scene: scenes/duel/wildbound_duel_v32.tscn\n'
+                  + 'Commit: ' + os.environ['SOURCE_SHA'] + '\n'
+                  + 'Built: ' + datetime.now(timezone.utc).isoformat() + '\n',
+                  encoding='utf-8'
+              )
+          (root / 'index.html').write_text(
+              '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+              '<title>Wildbound</title>'
+              '<meta http-equiv="refresh" content="0; url=duel/"></head>'
+              '<body><p>Play <a href="duel/">Wildbound</a>.</p></body></html>',
+              encoding='utf-8'
+          )
+          (root / '.nojekyll').write_text('', encoding='utf-8')
           PY
-          grep -aFq 'duel_engine_v30' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
-          grep -aFq 'wildbound_duel_v32' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
-          grep -aFq 'duel_ui_v32' "$RUNNER_TEMP/wildbound-site/duel/index.pck"
-          printf 'Wildbound 1v1 v0.32\nMain scene: scenes/duel/wildbound_duel_v32.tscn\nSource: %s\n' "$(git -C bond-preview rev-parse HEAD)" > "$RUNNER_TEMP/wildbound-site/duel/build-info.txt"
-          cp -a "$RUNNER_TEMP/wildbound-site/duel/." "$RUNNER_TEMP/wildbound-site/bond/"
-          cmp "$RUNNER_TEMP/wildbound-site/duel/index.pck" "$RUNNER_TEMP/wildbound-site/bond/index.pck"
-          echo "Published the real v0.32 duel to BOTH /bond/ and /duel/."
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload website artifact
+      - name: Upload production website
         uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ runner.temp }}/wildbound-site
 
-      - name: Publish website
+      - name: Publish GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
