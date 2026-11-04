@@ -105,10 +105,10 @@ func _build_cinematic_arena() -> void:
         step.position = Vector2(50.0+float(i)*52.0,181)
         step.size = Vector2(46,3)
 
-    ally_title.position = Vector2(73,199)
+    ally_title.position = Vector2(73,190)
     ally_title.size = Vector2(390,22)
     ally_title.add_theme_font_size_override("font_size",13)
-    rival_title.position = Vector2(835,199)
+    rival_title.position = Vector2(835,190)
     rival_title.size = Vector2(365,22)
     rival_title.add_theme_font_size_override("font_size",13)
     for i in range(3):
@@ -120,19 +120,35 @@ func _build_cinematic_arena() -> void:
             var offset: float = x-previous_x
             picture.position.x = x
             picture.size.x = 112
+            picture.pivot_offset = picture.size*0.5
+            # The v0.14 animation controller computes positions from
+            # ally_base/rival_base every frame, not from portrait.position.
+            # Updating those anchors keeps the actual paintings inside
+            # their new v0.26 full-width combat frames.
+            if foe:
+                rival_base[i] = Vector2(x,229)
+            else:
+                ally_base[i] = Vector2(x,229)
             for field in ["name","bar","hp","target"]:
                 var control: Control = group[field]
                 control.position.x += offset
                 if field == "name":
+                    control.position.y = 215
                     control.size.x = 130
-                    control.add_theme_font_size_override("font_size",12)
-                if field == "hp":
+                    control.add_theme_font_size_override("font_size",11)
+                elif field == "bar":
+                    control.position.y = 323
+                elif field == "hp":
+                    control.position.y = 333
                     control.size.x = 135
+                elif field == "target":
+                    control.position.y = 349
             var halo: Panel = portraits_halos[i*2+(1 if foe else 0)]
             halo.position.x += offset
+            halo.position.y = 231
             halo.size.x = 124
-        ally_element_icons[i].position = Vector2(ALLY_POS[i]+101,217)
-        enemy_element_icons[i].position = Vector2(FOE_POS[i]+100,217)
+        ally_element_icons[i].position = Vector2(ALLY_POS[i]+104,216)
+        enemy_element_icons[i].position = Vector2(FOE_POS[i]+103,216)
     # The inherited target threads used old hard-coded 826px coordinates.
     # Keep the original auto-target system but omit the obsolete lines.
     for line in target_threads:
@@ -209,15 +225,15 @@ func _build_big_team_cards() -> void:
         card_details[key].position = Vector2(x+146,512)
         card_details[key].size = Vector2(230,40)
         card_details[key].add_theme_font_size_override("font_size",12)
-        card_buy[key].position = Vector2(x+146,557)
-        card_buy[key].size = Vector2(232,30)
-        card_skill[key].position = Vector2(x+146,592)
-        card_skill[key].size = Vector2(130,25)
-        focus_buttons[key].position = Vector2(x+284,592)
-        focus_buttons[key].size = Vector2(94,25)
+        card_buy[key].position = Vector2(x+146,554)
+        card_buy[key].size = Vector2(232,29)
+        card_skill[key].position = Vector2(x+146,587)
+        card_skill[key].size = Vector2(130,24)
+        focus_buttons[key].position = Vector2(x+284,587)
+        focus_buttons[key].size = Vector2(94,24)
         focus_buttons[key].add_theme_font_size_override("font_size",11)
-        get_node("BondTrack_"+str(idx)).position = Vector2(x+146,552)
-        get_node("BondFill_"+str(idx)).position = Vector2(x+146,552)
+        get_node("BondTrack_"+str(idx)).position = Vector2(x+146,548)
+        get_node("BondFill_"+str(idx)).position = Vector2(x+146,548)
         element_chips[idx].hide()
         card_element_icons[idx].position = Vector2(x+360,480)
         card_element_icons[idx].size = Vector2(24,24)
@@ -227,6 +243,19 @@ func _build_big_team_cards() -> void:
     autoform_button.hide()
     replay_button.hide()
     type_size_button.hide()
+
+func _animate_fighters() -> void:
+    # The inherited sprite rig animates creatures and emits their native
+    # attack particles. Restore only the NEW enlarged card artwork's Y
+    # after the old rig's hardcoded 467px motion, while preserving the
+    # same responsive portrait animation and original sprite frames.
+    super._animate_fighters()
+    if not design26_ready:
+        return
+    for idx in range(3):
+        var key: String = String(CHALLENGE.ORDER[idx])
+        card_art[key].position.y = 491.0+1.3*sin(
+            animation_clock*1.5+float(idx)*2.1)
 
 func _build_shop_drawer() -> void:
     drawer_backdrop = Panel.new()
