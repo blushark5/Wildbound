@@ -18,7 +18,7 @@ permissions:
 # Cancel superseded successful publications, but do not let a cancelled
 # validation run cancel a genuine Pages upload that is already underway.
 concurrency:
-  group: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' && 'github-pages-noop' || 'github-pages-publish' }}
+  group: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' && 'github-pages-noop-v32' || 'github-pages-publish-v32' }}
   cancel-in-progress: true
 
 jobs:
