@@ -28,6 +28,7 @@ var tools_readout: RichTextLabel
 var saves_buttons: Array[Button] = []
 var saves_caption: Label
 var side_help_mode: String = ""
+var updating_legacy_section: bool = false
 
 func _ready() -> void:
     super._ready()
@@ -464,7 +465,12 @@ func _show_section(section: String) -> void:
     menu_section = section
     drawer_open = true
     if ["GROW","NEST","LEGACY","WORLD"].has(section):
+        # v0.13 used to auto-open the huge Field Guide every time a user
+        # selected NEST. v0.27 has its own intentional TEAM tab. Suppress
+        # that inherited side effect only during programmatic tab changes.
+        updating_legacy_section = true
         super._switch_tab(section)
+        updating_legacy_section = false
     _set_drawer_visibility(true)
     if section == "TEAM":
         _refresh_side_team()
@@ -575,13 +581,20 @@ func _toggle_shop() -> void:
         _show_section("GROW")
 
 func _switch_tab(next: String) -> void:
-    super._switch_tab(next)
+    if nav27_ready and next == "NEST":
+        updating_legacy_section = true
+        super._switch_tab(next)
+        updating_legacy_section = false
+    else:
+        super._switch_tab(next)
     if nav27_ready and drawer_open:
         _set_drawer_visibility(true)
 
 func _open_codex() -> void:
     if not nav27_ready:
         super._open_codex()
+        return
+    if updating_legacy_section:
         return
     codex_layer.hide()
     _show_section("TEAM")
