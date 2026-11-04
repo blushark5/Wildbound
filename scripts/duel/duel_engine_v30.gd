@@ -3,6 +3,8 @@ extends RefCounted
 ## against one rival at a time. The older 3v3 engine is not executed.
 ## Uses its own safe save namespace; a best-effort legacy import is read-only.
 signal changed(message: String)
+signal strike_landed(amount: float, enemy_target: bool, element_name: String, manual: bool)
+signal duel_finished(won: bool, gold_earned: float, is_record: bool)
 
 const SAVE_FILE: String = "user://wildbound_duel_v30.json"
 const LEGACY_FILE: String = "user://wildbound_bond_v14_preview_v1.json"
@@ -166,6 +168,7 @@ func hit(tap: bool = false) -> void:
     last_hit = strike
     impact_flash = 0.18
     enemy_hp = maxf(0.0,enemy_hp-strike)
+    strike_landed.emit(strike,true,element(active),tap)
     if enemy_hp <= 0.0:
         _victory()
 
@@ -173,13 +176,16 @@ func _enemy_hit() -> void:
     if not fighting:
         return
     var strike: float = (3.6*pow(1.105,float(stage-1))*(1.8 if is_boss() else 1.0))
-    hero_hp = maxf(0.0,hero_hp-strike*matchup(opponent,active))
+    var actual_damage: float = strike*matchup(opponent,active)
+    hero_hp = maxf(0.0,hero_hp-actual_damage)
+    strike_landed.emit(actual_damage,false,element(opponent),false)
     if hero_hp <= 0.0:
         fighting = false
         awaiting_next = true
         defeated = true
         deaths += 1
         farming = false
+        duel_finished.emit(false,0.0,false)
         _announce("%s was defeated. Level up, switch elements, or retry." % display_name(active))
         save()
 
@@ -201,6 +207,7 @@ func _victory() -> void:
     if int(levels[active]) >= 15 and int(bond_xp[active]) >= 15:
         evolved[active] = true
     clear_pause = 1.0
+    duel_finished.emit(true,gained,not farming and stage > prior_best)
     _announce("%s WINS • +%s Gold%s" % [
         display_name(active),format_number(gained),
         " • NEW STAGE RECORD" if not farming and stage > prior_best else ""])
