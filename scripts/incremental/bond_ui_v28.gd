@@ -263,8 +263,8 @@ func _refresh_side_team() -> void:
         btn.disabled = cap or game.gold < cost
         btn.tooltip_text = (
             "%s: Level %d / %d. A training purchase increases only this creature. "
-            +"Reach higher Bond Ranks by Ascending to grow beyond the cap." %
-            [game.display_name(kind),game.unit_level(kind),game.bond_level_cap(kind)])
+            +"Reach higher Bond Ranks by Ascending to grow beyond the cap.") % [
+                game.display_name(kind),game.unit_level(kind),game.bond_level_cap(kind)]
 
 func _open_skills_panel() -> void:
     skills28_open = true
