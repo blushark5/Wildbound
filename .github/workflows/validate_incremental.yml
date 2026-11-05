@@ -35,12 +35,13 @@ jobs:
 
       - name: Verify core gameplay and latest visual interactions
         run: |
-          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v35.tscn"' project.godot
+          grep -Fq 'run/main_scene="res://scenes/duel/wildbound_duel_v36.tscn"' project.godot
           timeout 90s godot --headless --path . --script res://tests/check_duel_v30.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v32.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v33.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v34.gd
           timeout 90s godot --headless --path . --script res://tests/check_duel_v35.gd
+          timeout 90s godot --headless --path . --script res://tests/check_duel_v36.gd
 
       - name: Verify game starts
         run: timeout 60s godot --headless --path . --quit-after 20
@@ -52,13 +53,13 @@ jobs:
           test -s "$RUNNER_TEMP/duel-test/index.html"
           test -s "$RUNNER_TEMP/duel-test/index.pck"
           test -s "$RUNNER_TEMP/duel-test/index.wasm"
-          grep -aFq 'duel_ui_v35' "$RUNNER_TEMP/duel-test/index.pck"
+          grep -aFq 'duel_ui_v36' "$RUNNER_TEMP/duel-test/index.pck"
 
-      - name: Capture actual v0.35 Godot game screens
-        run: xvfb-run -a godot --path . --script res://tests/capture_duel_v35.gd
+      - name: Capture actual v0.36 Godot game screens
+        run: xvfb-run -a godot --path . --script res://tests/capture_duel_v36.gd
 
       - name: Archive rendered fidelity screenshots
         uses: actions/upload-artifact@v4
         with:
-          name: wildbound-v35-premium-battle-screens
-          path: Docs/QA/wildbound_v35_*.png
+          name: wildbound-v36-premium-battle-screens
+          path: Docs/QA/wildbound_v36_*.png
