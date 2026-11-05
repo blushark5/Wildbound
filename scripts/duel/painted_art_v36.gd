@@ -3,11 +3,11 @@ extends RefCounted
 ## layers, decoded from a production atlas. The HUD remains native Godot.
 const ATLAS_PATH := "res://assets/duel/v36/concept_atlas.webp.base64"
 const OLD = preload("res://scripts/duel/premium_art_v35.gd")
-const WIDTH := 1024
-const HEIGHT := 883
-const ENV_HEIGHT := 576
-const CELL_WIDTH := 341
-const CELL_HEIGHT := 307
+const WIDTH := 1280
+const HEIGHT := 1104
+const ENV_HEIGHT := 720
+const CELL_WIDTH := 426
+const CELL_HEIGHT := 384
 const ORDER: Array[String] = ["cindlet","brinlet","spriglet"]
 static var initialized := false
 static var valid := false
@@ -47,7 +47,7 @@ static func _init_atlas() -> void:
         push_error("Wildbound v0.36 painted atlas failed to decode")
         return
     if picture.get_width() != WIDTH or picture.get_height() != HEIGHT:
-        push_error("Wildbound v0.36 atlas must be 1024x883")
+        push_error("Wildbound v0.36 atlas must be 1280x1104")
         return
     back = ImageTexture.create_from_image(picture.get_region(
         Rect2i(0,0,WIDTH,ENV_HEIGHT)))
