@@ -14,6 +14,7 @@ static var valid := false
 static var base: Dictionary = {}
 static var attacks: Dictionary = {}
 static var hurts: Dictionary = {}
+static var faces: Dictionary = {}
 static var back: Texture2D
 
 static func ready() -> bool:
@@ -32,6 +33,21 @@ static func creature(kind: String,evolved: bool = false,pose: String = "idle") -
     # derived from the actual transparent painted creature, not placeholders.
     var dictionary: Dictionary = (attacks if pose == "attack" else hurts if pose == "hurt" else base)
     return dictionary.get(kind,base.get(kind,null)) as Texture2D
+
+static func portrait(kind: String,evolved: bool = false) -> Texture2D:
+    _init_atlas()
+    if not valid or not base.has(kind):
+        return OLD.creature(kind,evolved)
+    if not faces.has(kind):
+        var body: Image = (base[kind] as Texture2D).get_image()
+        var w: int = body.get_width()
+        var h: int = body.get_height()
+        var start_x: int = 0 if kind == "brinlet" else int(w*0.59)
+        var crop_width: int = int(w*0.41)
+        var cropped: Image = body.get_region(Rect2i(
+            start_x,int(h*0.06),mini(crop_width,w-start_x),int(h*0.76)))
+        faces[kind] = ImageTexture.create_from_image(cropped)
+    return faces[kind] as Texture2D
 
 static func _init_atlas() -> void:
     if initialized:
