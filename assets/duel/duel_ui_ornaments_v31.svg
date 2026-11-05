@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+<defs>
+ <linearGradient id="gold" x1="0" y1="0" x2=".75" y2="1"><stop stop-color="#fff2bc"/><stop offset=".34" stop-color="#c9993f"/><stop offset=".68" stop-color="#f9db81"/><stop offset="1" stop-color="#b87933"/></linearGradient>
+ <linearGradient id="glow"><stop stop-color="#ffedb9" stop-opacity=".8"/><stop offset="1" stop-color="#f9b856" stop-opacity="0"/></linearGradient>
+ <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#89d78f" stop-opacity=".8"/><stop offset="1" stop-color="#246b52" stop-opacity="0"/></linearGradient>
+ <linearGradient id="slit"><stop stop-color="#0d2a36"/><stop offset=".5" stop-color="#325c61"/><stop offset="1" stop-color="#0d2a36"/></linearGradient>
+</defs>
+<!-- Header gilded seams and flourish -->
+<path d="M25 89H1260" stroke="#e6bd66" stroke-width="2" opacity=".8"/>
+<path d="M25 17H1260" stroke="#f9e9bb" stroke-width="2" opacity=".45"/>
+<g fill="none" stroke="url(#gold)" stroke-width="3" stroke-linecap="round" opacity=".93"><path d="M60 14H30Q18 14 18 26V53" /><path d="M37 21l7 7 -7 7 -7 -7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M1222 14H1252Q1264 14 1264 26V53" /><path d="M1245 21l-7 7 --7 7 --7 -7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M60 90H30Q18 90 18 78V51" /><path d="M37 83l7 -7 -7 -7 -7 --7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M1222 90H1252Q1264 90 1264 78V51" /><path d="M1245 83l-7 -7 --7 -7 --7 --7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/></g>
+<path d="M29 90H345m64 0h840" stroke="#896e43" stroke-width="3" opacity=".38"/>
+<g fill="#f4d281" stroke="#bd8248" stroke-width="1"><path d="M390 77l9 9-9 9-9-9Z"/><path d="M1110 77l9 9-9 9-9-9Z"/></g>
+<!-- Full arena frame + living gold filigree around training menu -->
+<g fill="none" stroke="url(#gold)" stroke-width="3" stroke-linecap="round" opacity=".93"><path d="M60 107H30Q18 107 18 119V146" /><path d="M37 114l7 7 -7 7 -7 -7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M352 107H382Q394 107 394 119V146" /><path d="M375 114l-7 7 --7 7 --7 -7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M60 694H30Q18 694 18 682V655" /><path d="M37 687l7 -7 -7 -7 -7 --7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M352 694H382Q394 694 394 682V655" /><path d="M375 687l-7 -7 --7 -7 --7 --7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/></g>
+<g fill="none" stroke="url(#gold)" stroke-width="3" stroke-linecap="round" opacity=".93"><path d="M454 109H424Q412 109 412 121V148" /><path d="M431 116l7 7 -7 7 -7 -7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M1205 109H1235Q1247 109 1247 121V148" /><path d="M1228 116l-7 7 --7 7 --7 -7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M454 612H424Q412 612 412 600V573" /><path d="M431 605l7 -7 -7 -7 -7 --7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/><path d="M1205 612H1235Q1247 612 1247 600V573" /><path d="M1228 605l-7 -7 --7 -7 --7 --7Z" fill="#f4cd7e" stroke="#9c6328" stroke-width="1"/></g>
+<path d="M42 186H368M47 566H365" stroke="#a27c46" stroke-width="2" opacity=".7"/>
+<path d="M31 188H118m170 0h80" stroke="#f1cf76" stroke-width="1" opacity=".58"/>
+<path d="M31 575H365" stroke="#bc9b5e" stroke-width="2" opacity=".7"/>
+<path d="M47 707H384" stroke="#195c55" stroke-width="2" opacity=".4"/>
+<path d="M430 619h794" stroke="#e2c78c" stroke-width="1" opacity=".67"/>
+<!-- old stone corner motifs & subtle ornamentation, avoiding buttons -->
+<path d="M416 140q0-24 24-24m792 0q11 9 11 23" stroke="#f8df93" stroke-width="2" opacity=".36" fill="none"/>
+<path d="M452 185q43-50 80-37m644 19q-52-37-74-18" stroke="#d4f4d1" stroke-width="2" opacity=".14" fill="none"/>
+<path d="M552 108q20 18 13 41q-25 -9 -13 -41Z" fill="#5ca66f" opacity=".35"/><path d="M600 108q20 18 13 41q-25 -9 -13 -41Z" fill="#3f8563" opacity=".35"/><path d="M648 108q20 18 13 41q-25 -9 -13 -41Z" fill="#5ca66f" opacity=".35"/><path d="M696 108q20 18 13 41q-25 -9 -13 -41Z" fill="#3f8563" opacity=".35"/><path d="M744 108q20 18 13 41q-25 -9 -13 -41Z" fill="#5ca66f" opacity=".35"/><path d="M792 108q20 18 13 41q-25 -9 -13 -41Z" fill="#3f8563" opacity=".35"/><path d="M840 108q20 18 13 41q-25 -9 -13 -41Z" fill="#5ca66f" opacity=".35"/><path d="M888 108q20 18 13 41q-25 -9 -13 -41Z" fill="#3f8563" opacity=".35"/><path d="M936 108q20 18 13 41q-25 -9 -13 -41Z" fill="#5ca66f" opacity=".35"/>
+<!-- HUD bevel of main action and farm with restrained shine -->
+<path d="M456 636h454M969 636h238" stroke="#ffe3a6" stroke-width="2" opacity=".56"/>
+<path d="M453 689h482m40 0h245" stroke="#603b23" stroke-width="3" opacity=".8"/>
+<circle cx="443" cy="664" r="24" fill="url(#glow)" opacity=".23"/>
+<circle cx="935" cy="663" r="27" fill="url(#glow)" opacity=".21"/>
+<!-- engraved stage seal at the top and inset glass bar bottom -->
+<path d="M722 116h190" stroke="#fce9a6" opacity=".65" stroke-width="1.5"/>
+<path d="M703 178h224" stroke="#704e29" opacity=".67" stroke-width="2"/>
+<path d="M455 552H1089" stroke="#b0eac3" stroke-width="1" opacity=".3"/>
+<!-- Tiny sparkle gems on battlefield arch -->
+<g fill="#fcecc2" opacity=".65">
+ <path d="M433 206l3 10-3 10-3-10Z"/><path d="M1192 468l3 8-3 8-3-8Z"/>
+</g>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 128 128">
+<defs><linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe0a0"/><stop offset=".60" stop-color="#ed925c"/><stop offset="1" stop-color="#b65750"/></linearGradient><radialGradient id="aura" cx=".5" cy=".5" r=".5"><stop stop-color="#ffce76" stop-opacity=".38"/><stop offset="1" stop-color="#ffce76" stop-opacity="0"/></radialGradient></defs>
+<ellipse cx="65" cy="66" rx="58" ry="53" fill="url(#aura)"/>
+<ellipse cx="64" cy="117" rx="42" ry="6" fill="#173a3d" opacity=".14"/>
+<g transform="translate(6 -4) rotate(-7 67 76)">
+<path d="M86 88Q108 108 120 82Q124 64 103 51L92 74Z" fill="#b65750" stroke="#773f50" stroke-width="4"/>
+<path d="M102 62Q120 73 108 90L96 86Z" fill="#ffe0a0"/>
+<path d="M31 53L27 12L55 38M77 40L105 13L100 57" fill="#b65750" stroke="#773f50" stroke-width="5"/>
+<path d="M35 91L31 110L54 110L57 99M83 99L87 114L106 107L98 91" fill="#b65750" stroke="#773f50" stroke-width="4"/>
+<path d="M31 54Q42 37 68 37Q96 36 103 62Q110 84 91 103Q65 114 41 100Q21 84 31 54Z" fill="url(#body)" stroke="#773f50" stroke-width="5"/>
+<path d="M45 76Q59 61 82 75L84 96Q63 108 43 92Z" fill="#ffe0a0" opacity=".90"/>
+<path d="M53 38Q48 21 62 8Q57 26 74 24Q83 14 84 5Q101 30 82 48" fill="#ffdc74" stroke="#b65750" stroke-width="3"/>
+<ellipse cx="51" cy="69" rx="6" ry="7" fill="white"/><ellipse cx="79" cy="69" rx="6" ry="7" fill="white"/>
+<circle cx="53" cy="70" r="3.2" fill="#773f50"/><circle cx="81" cy="70" r="3.2" fill="#773f50"/><path d="M59 84Q67 89 76 84" fill="none" stroke="#773f50" stroke-width="3" stroke-linecap="round"/><path d="M28 43L15 6L53 30M85 32L118 7L105 58" fill="#ffe0a0" stroke="#773f50" stroke-width="4"/><path d="M28 73L7 59L27 87M103 74L126 54L110 92" fill="#ffdc74" stroke="#b65750" stroke-width="4"/></g>
+<path d="M18 27l4-11 4 11 9 4-9 4-4 10-4-10-9-4Z" fill="#ffce76" opacity=".80"/><g fill="#ffce76" stroke="#ed925c" stroke-width="2"><path d="M112 20l5-13 5 13 7 4-7 3-5 12-5-12-7-3Z"/><circle cx="19" cy="56" r="6"/></g><g stroke="#ffce76" stroke-width="4" stroke-linecap="round"><path d="M11 26L23 13M112 55L127 50M108 102L122 118"/></g>
+</svg>
