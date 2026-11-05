@@ -50,10 +50,10 @@ func _rebuild_illustrated_stage36() -> void:
         Rect2(1160,114,95,94),Color("#15273b"),
         Color("#ffe09a"),14,3)
     hero_portrait36 = _art(self,"HeroPortrait36",
-        ILLUSTRATION36.creature("cindlet"),Rect2(28,117,88,88))
+        ILLUSTRATION36.portrait("cindlet"),Rect2(28,117,88,88))
     foe_portrait36 = _art(self,"RivalPortrait36",
-        ILLUSTRATION36.creature("brinlet"),Rect2(1164,117,88,88))
-    hero_portrait36.flip_h = true
+        ILLUSTRATION36.portrait("brinlet"),Rect2(1164,117,88,88))
+    hero_portrait36.flip_h = false
     foe_portrait36.flip_h = false
     hero_portrait36.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
     foe_portrait36.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -80,6 +80,10 @@ func _rebuild_illustrated_stage36() -> void:
     _place35(enemy_hp_text,Vector2(887,176),Vector2(258,24))
     hero_hp_bar.color = Color("#58d33b")
     enemy_hp_bar.color = Color("#58d33b")
+    for label in [hero_hp_text,enemy_hp_text]:
+        label.add_theme_color_override("font_color",Color("#fff9df"))
+        label.add_theme_constant_override("outline_size",4)
+        label.add_theme_color_override("font_outline_color",Color("#071425"))
     (get_node("HeroHealthBg") as Panel).add_theme_stylebox_override(
         "panel",_style(Color("#071427"),Color("#e0ba7a"),6,2,2))
     (get_node("EnemyHealthBg") as Panel).add_theme_stylebox_override(
@@ -130,13 +134,21 @@ func _refresh() -> void:
     var foe_pose: String = "hurt" if enemy_hit31 > .1 else "idle"
     hero_art.texture = ILLUSTRATION36.creature(
         game.active,bool(game.evolved[game.active]),hero_pose)
+    hero_art.flip_h = game.active == "brinlet"
     enemy_art.texture = ILLUSTRATION36.creature(
         game.opponent,game.is_boss(),foe_pose)
-    hero_portrait36.texture = ILLUSTRATION36.creature(
+    enemy_art.flip_h = game.opponent != "brinlet"
+    var rival_extent: Vector2 = (Vector2(545,375) if game.is_boss()
+        else Vector2(529,353))
+    enemy_art.size = rival_extent
+    enemy_art.pivot_offset = rival_extent*0.5
+    hero_portrait36.texture = ILLUSTRATION36.portrait(
         game.active,bool(game.evolved[game.active]))
-    foe_portrait36.texture = ILLUSTRATION36.creature(game.opponent,game.is_boss())
+    foe_portrait36.texture = ILLUSTRATION36.portrait(game.opponent,game.is_boss())
+    hero_portrait36.flip_h = game.active == "brinlet"
+    foe_portrait36.flip_h = game.opponent != "brinlet"
     for kind in DUEL.ORDER:
-        (team_images35[kind] as TextureRect).texture = ILLUSTRATION36.creature(
+        (team_images35[kind] as TextureRect).texture = ILLUSTRATION36.portrait(
             kind,bool(game.evolved[kind]))
     hero_hp_bar.size.x = 266.0*clampf(
         game.hero_hp/maxf(1.0,game.hero_max_hp),0,1)
